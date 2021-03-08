@@ -1,6 +1,5 @@
 ##### Premier League 2020-21 Season Simulations #####
 ## By: Stephan Teodosescu
-## Updated March 1, 2021
 
 ##### Load libraries #####
 library(tidyverse)
@@ -10,7 +9,6 @@ library(forcats)
 library(gt) #for 538-themed tables
 library(extrafont) #for adding in new fonts
 library(rvest) #for web scraping
-library(ggalt) #for dumbbell plot
 library(ggtext)
 library(googlesheets4)
 
