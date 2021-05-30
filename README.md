@@ -14,10 +14,10 @@ Calculating Individual Match Outcomes
 
 As described by Taylor, the method uses 1) the average number of goals scored by home and away teams in the given campaign and 2) The average number of goals scored and conceded by the two teams in question in any match. As an example, let's do this analysis for a single match: Burnley away vs. Liverpool. And let's say Home teams are scoring 0.25 goals per game more than visitors -- 1.50 compared to 1.25, and the average game has 1.35 expected goals per team.
 
-Note GS = Goals Scored and GC = Goals Conceded in the table below:
+Note GS = Goals Scored and GC = Goals Conceded in the table below.
 
-Avg GS by Home Teams | Avg GS by Away Teams | Avg GS/GC by all teams | Avg GS  by Burnley | Avg GC by Burnley | Avg GS by Liverpool| Avg GC by Liverpool
---- | --- | --- |--- |--- |--- |--- |--- |--- |--- |---
+| Avg GS by Home Teams | Avg GS by Away Teams | Avg GS/GC by all teams | Avg GS  by Burnley | Avg GC by Burnley | Avg GS by Liverpool| Avg GC by Liverpool |
+| --- | --- | --- | --- | --- | --- | --- |
 1.50 | 1.25 | 1.35 | 1.9  | 1.1  | 1.92  | 1.16
 
 This means that Burnley have a goals average of 1.00 and Liverpool 2.43 goals. The math to get there: Burnley are expected to score 0.79 * 0.85 * 1.0 * 1.37 = 1.00 goals based on the aformentioned scoring rates. Liverpool are likely to score 1.40* 1.39 * 0.91 * 1.37 = 2.43 goals.
