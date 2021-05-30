@@ -20,7 +20,7 @@ Note GS = Goals Scored and GC = Goals Conceded in the table below.
 | --- | --- | --- | --- | --- | --- | --- |
 1.49 | 1.24 | 1.37 | 1.09  | 1.91 | 1.92  | 1.16
 
-This means that Burnley have a goals average of about 1.00 and Liverpool 2.43 goals. The math to get there: Burnley are scoring an average of 1.09 goals per match, thus are scoring (1.09/1.37) = 0.79times the rate of average scoring in the competition. Liverpool allow 1.16/1.37 or 0.85 times the rate of conceding in the competition. Burnley are at home and home teams score 1.49/1.37 or 1.09 times the average rate for this year's campaign. Thus, multiplying these rates together, Burnley are expected to score 0.79 * 0.85 * 1.09 * 1.37 = 1.0 goals in this matchup. Likewise we can do the same for Liverpool:
+This means we expect Burnley to score 1.00 goal and Liverpool 2.43 goals in an upcoming game. The math to get there: Burnley are scoring an average of 1.09 goals per match, thus are scoring (1.09/1.37) = 0.79times the rate of average scoring in the competition. Liverpool allow 1.16/1.37 or 0.85 times the rate of conceding in the competition. Burnley are at home and home teams score 1.49/1.37 or 1.09 times the average rate for this year's campaign. Thus, multiplying these rates together, Burnley are expected to score 0.79 * 0.85 * 1.09 * 1.37 = 1.0 goals in this matchup. Likewise we can do the same for Liverpool:
 
 Liverpool score 1.92/1.37 = 1.40
 
@@ -50,7 +50,7 @@ Visualizing the results
 
 Using the `df.all` output dataframe we can create myriad data visualizations to show the range of outcomes for each Premier League team. I use the Tidyverse Googlesheets API to write this dataset to Google Sheets so we can subsequently use Tableau's Web Data Connector functionality to layer on visualizations in Tableau. We can use the CronR addin for RStudio to schedule our R script to run on a defined weekly cadence to ensure we have the latest league results accounted for.
 
-In addition, we  can create a few graphs in R as well. This one was generated as of Matchweek 9![An example from earlier in the season](/Users/Stephan/Documents/Club-Soccer-Forecasts/Expected_Points.png)
+In addition, we  can create a few graphs in R as well. This one was generated as of Matchweek 9![This one was generated as of Matchweek 9](Expected_Points.png)
 
 Data
 ------------
