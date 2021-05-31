@@ -41,16 +41,16 @@ Simulating all season fixtures
 
 The above shows how we get to probabilities for individual match outcomes. Next, we use these outcomes to simulate an entire season...10,000 times. For this model we're using independent Poisson distributions with means `ExpHG` and `ExpAG` to simulate results from. 
 
-For matches that have yet to be played we assume the standard league format where each team plays all other teams home and away. We create all these possible combinations between the league teams in a dataframe, removing the cases where a team plays itself, and looking for combinations which have not already been played. This is where we replicate Taylor's approach to get the expected scoring rates `ExpHG` and `ExpAG`.
+For matches that have yet to be played we assume the standard league format where each team plays all other teams home and away. We create all these possible combinations between the league teams in a dataframe, removing the cases where a team plays itself, and look for combinations which have not already been played. This is where we replicate Taylor's approach to get the expected scoring rates `ExpHG` and `ExpAG`.
 
-From there we run the season simulation 10,000 times and initialize the results table named `df.all`, where for each iteration, the remaining season results are simulated and total points, Goal Difference, and rankings table is constructed based on points and goal difference.
+From there we run the season simulation 10,000 times and initialize the results table named `df.all`, where for each iteration, the remaining season results are simulated and `Total Points`, `Goal Difference`, and a rankings table is constructed based on points and goal difference.
 
 Visualizing the results
 ------------
 
 Using the `df.all` output dataframe we can create myriad data visualizations to show the range of outcomes for each Premier League team. I use the Tidyverse Googlesheets API to write this dataset to Google Sheets so we can subsequently use Tableau's Web Data Connector functionality to layer on visualizations in Tableau. We can use the CronR addin for RStudio to schedule our R script to run on a defined weekly cadence to ensure we have the latest league results accounted for.
 
-In addition, we  can create a few graphs in R as well. This one was generated as of Matchweek 9![This one was generated as of Matchweek 9](Expected_Points.png)
+In addition, we  can create a few graphs in R as well. This one was generated as of Matchweek 9![This one was generated as of Matchweek 9](Expected_Points.png).
 
 Data
 ------------
@@ -60,4 +60,4 @@ The data come from [football-data.co.uk](http://www.football-data.co.uk/), and i
 Learn More
 ------------
 
-You can read more at my blog [Between the Pipes](https://betweenpipes.wordpress.com/)
+You can read more at my blog [Between the Pipes](https://betweenpipes.wordpress.com/).
