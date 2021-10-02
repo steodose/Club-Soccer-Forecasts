@@ -1,0 +1,401 @@
+Team,Placement,Freq,MP
+Arsenal,1,0,30
+Aston Villa,1,0,30
+Brighton,1,0,30
+Burnley,1,0,30
+Chelsea,1,0,30
+Crystal Palace,1,0,30
+Everton,1,0,30
+Fulham,1,0,30
+Leeds,1,0,30
+Leicester,1,0,30
+Liverpool,1,0,30
+Man City,1,0.9998,30
+Man United,1,0.0002,30
+Newcastle,1,0,30
+Sheffield United,1,0,30
+Southampton,1,0,30
+Tottenham,1,0,30
+West Brom,1,0,30
+West Ham,1,0,30
+Wolves,1,0,30
+Arsenal,2,0,30
+Aston Villa,2,0.0002,30
+Brighton,2,0,30
+Burnley,2,0,30
+Chelsea,2,0.0051,30
+Crystal Palace,2,0,30
+Everton,2,0.0002,30
+Fulham,2,0,30
+Leeds,2,0,30
+Leicester,2,0.205,30
+Liverpool,2,0.0091,30
+Man City,2,0.0002,30
+Man United,2,0.7559,30
+Newcastle,2,0,30
+Sheffield United,2,0,30
+Southampton,2,0,30
+Tottenham,2,0.006,30
+West Brom,2,0,30
+West Ham,2,0.0183,30
+Wolves,2,0,30
+Arsenal,3,0.0001,30
+Aston Villa,3,0.0005,30
+Brighton,3,0,30
+Burnley,3,0,30
+Chelsea,3,0.0545,30
+Crystal Palace,3,0,30
+Everton,3,0.0032,30
+Fulham,3,0,30
+Leeds,3,0,30
+Leicester,3,0.5004,30
+Liverpool,3,0.0577,30
+Man City,3,0,30
+Man United,3,0.1939,30
+Newcastle,3,0,30
+Sheffield United,3,0,30
+Southampton,3,0,30
+Tottenham,3,0.0586,30
+West Brom,3,0,30
+West Ham,3,0.1311,30
+Wolves,3,0,30
+Arsenal,4,0.0019,30
+Aston Villa,4,0.0095,30
+Brighton,4,0,30
+Burnley,4,0,30
+Chelsea,4,0.1555,30
+Crystal Palace,4,0,30
+Everton,4,0.0181,30
+Fulham,4,0,30
+Leeds,4,0.0002,30
+Leicester,4,0.1628,30
+Liverpool,4,0.1844,30
+Man City,4,0,30
+Man United,4,0.0349,30
+Newcastle,4,0,30
+Sheffield United,4,0,30
+Southampton,4,0,30
+Tottenham,4,0.151,30
+West Brom,4,0,30
+West Ham,4,0.2817,30
+Wolves,4,0,30
+Arsenal,5,0.008,30
+Aston Villa,5,0.0227,30
+Brighton,5,0,30
+Burnley,5,0,30
+Chelsea,5,0.1965,30
+Crystal Palace,5,0,30
+Everton,5,0.0368,30
+Fulham,5,0,30
+Leeds,5,0.0002,30
+Leicester,5,0.0719,30
+Liverpool,5,0.2321,30
+Man City,5,0,30
+Man United,5,0.0103,30
+Newcastle,5,0,30
+Sheffield United,5,0,30
+Southampton,5,0,30
+Tottenham,5,0.2018,30
+West Brom,5,0,30
+West Ham,5,0.2197,30
+Wolves,5,0,30
+Arsenal,6,0.0226,30
+Aston Villa,6,0.0492,30
+Brighton,6,0,30
+Burnley,6,0,30
+Chelsea,6,0.2056,30
+Crystal Palace,6,0,30
+Everton,6,0.0744,30
+Fulham,6,0,30
+Leeds,6,0.0019,30
+Leicester,6,0.0392,30
+Liverpool,6,0.2217,30
+Man City,6,0,30
+Man United,6,0.004,30
+Newcastle,6,0,30
+Sheffield United,6,0,30
+Southampton,6,0,30
+Tottenham,6,0.2158,30
+West Brom,6,0,30
+West Ham,6,0.1656,30
+Wolves,6,0,30
+Arsenal,7,0.065,30
+Aston Villa,7,0.0932,30
+Brighton,7,0,30
+Burnley,7,0,30
+Chelsea,7,0.2101,30
+Crystal Palace,7,0,30
+Everton,7,0.1306,30
+Fulham,7,0,30
+Leeds,7,0.0069,30
+Leicester,7,0.0174,30
+Liverpool,7,0.1672,30
+Man City,7,0,30
+Man United,7,0.0007,30
+Newcastle,7,0,30
+Sheffield United,7,0,30
+Southampton,7,0,30
+Tottenham,7,0.1956,30
+West Brom,7,0,30
+West Ham,7,0.1133,30
+Wolves,7,0,30
+Arsenal,8,0.1618,30
+Aston Villa,8,0.1984,30
+Brighton,8,0,30
+Burnley,8,0,30
+Chelsea,8,0.1101,30
+Crystal Palace,8,0,30
+Everton,8,0.2539,30
+Fulham,8,0,30
+Leeds,8,0.0281,30
+Leicester,8,0.0029,30
+Liverpool,8,0.0819,30
+Man City,8,0,30
+Man United,8,0.0001,30
+Newcastle,8,0,30
+Sheffield United,8,0,30
+Southampton,8,0.0001,30
+Tottenham,8,0.1096,30
+West Brom,8,0,30
+West Ham,8,0.0526,30
+Wolves,8,0.0005,30
+Arsenal,9,0.2848,30
+Aston Villa,9,0.268,30
+Brighton,9,0.0001,30
+Burnley,9,0,30
+Chelsea,9,0.0448,30
+Crystal Palace,9,0.0012,30
+Everton,9,0.2286,30
+Fulham,9,0,30
+Leeds,9,0.0792,30
+Leicester,9,0.0004,30
+Liverpool,9,0.034,30
+Man City,9,0,30
+Man United,9,0,30
+Newcastle,9,0,30
+Sheffield United,9,0,30
+Southampton,9,0.001,30
+Tottenham,9,0.0422,30
+West Brom,9,0,30
+West Ham,9,0.0141,30
+Wolves,9,0.0016,30
+Arsenal,10,0.3014,30
+Aston Villa,10,0.2432,30
+Brighton,10,0.0014,30
+Burnley,10,0.0008,30
+Chelsea,10,0.0159,30
+Crystal Palace,10,0.0048,30
+Everton,10,0.1882,30
+Fulham,10,0,30
+Leeds,10,0.1991,30
+Leicester,10,0,30
+Liverpool,10,0.0104,30
+Man City,10,0,30
+Man United,10,0,30
+Newcastle,10,0,30
+Sheffield United,10,0,30
+Southampton,10,0.0074,30
+Tottenham,10,0.0158,30
+West Brom,10,0,30
+West Ham,10,0.0031,30
+Wolves,10,0.0085,30
+Arsenal,11,0.1345,30
+Aston Villa,11,0.102,30
+Brighton,11,0.0116,30
+Burnley,11,0.0069,30
+Chelsea,11,0.0018,30
+Crystal Palace,11,0.0396,30
+Everton,11,0.0611,30
+Fulham,11,0,30
+Leeds,11,0.5283,30
+Leicester,11,0,30
+Liverpool,11,0.0014,30
+Man City,11,0,30
+Man United,11,0,30
+Newcastle,11,0,30
+Sheffield United,11,0,30
+Southampton,11,0.0522,30
+Tottenham,11,0.0035,30
+West Brom,11,0,30
+West Ham,11,0.0005,30
+Wolves,11,0.0566,30
+Arsenal,12,0.0151,30
+Aston Villa,12,0.0112,30
+Brighton,12,0.0669,30
+Burnley,12,0.0589,30
+Chelsea,12,0.0001,30
+Crystal Palace,12,0.2258,30
+Everton,12,0.0043,30
+Fulham,12,0.0001,30
+Leeds,12,0.1081,30
+Leicester,12,0,30
+Liverpool,12,0.0001,30
+Man City,12,0,30
+Man United,12,0,30
+Newcastle,12,0.0026,30
+Sheffield United,12,0,30
+Southampton,12,0.2192,30
+Tottenham,12,0.0001,30
+West Brom,12,0,30
+West Ham,12,0,30
+Wolves,12,0.2875,30
+Arsenal,13,0.0041,30
+Aston Villa,13,0.0017,30
+Brighton,13,0.1192,30
+Burnley,13,0.1033,30
+Chelsea,13,0,30
+Crystal Palace,13,0.2465,30
+Everton,13,0.0006,30
+Fulham,13,0.0006,30
+Leeds,13,0.0333,30
+Leicester,13,0,30
+Liverpool,13,0,30
+Man City,13,0,30
+Man United,13,0,30
+Newcastle,13,0.0067,30
+Sheffield United,13,0,30
+Southampton,13,0.2337,30
+Tottenham,13,0,30
+West Brom,13,0,30
+West Ham,13,0,30
+Wolves,13,0.2503,30
+Arsenal,14,0.0005,30
+Aston Villa,14,0.0002,30
+Brighton,14,0.1748,30
+Burnley,14,0.1675,30
+Chelsea,14,0,30
+Crystal Palace,14,0.2322,30
+Everton,14,0,30
+Fulham,14,0.0029,30
+Leeds,14,0.0109,30
+Leicester,14,0,30
+Liverpool,14,0,30
+Man City,14,0,30
+Man United,14,0,30
+Newcastle,14,0.0207,30
+Sheffield United,14,0,30
+Southampton,14,0.2074,30
+Tottenham,14,0,30
+West Brom,14,0.0001,30
+West Ham,14,0,30
+Wolves,14,0.1828,30
+Arsenal,15,0.0002,30
+Aston Villa,15,0,30
+Brighton,15,0.2471,30
+Burnley,15,0.2407,30
+Chelsea,15,0,30
+Crystal Palace,15,0.1618,30
+Everton,15,0,30
+Fulham,15,0.0117,30
+Leeds,15,0.003,30
+Leicester,15,0,30
+Liverpool,15,0,30
+Man City,15,0,30
+Man United,15,0,30
+Newcastle,15,0.0551,30
+Sheffield United,15,0,30
+Southampton,15,0.1606,30
+Tottenham,15,0,30
+West Brom,15,0,30
+West Ham,15,0,30
+Wolves,15,0.1198,30
+Arsenal,16,0,30
+Aston Villa,16,0,30
+Brighton,16,0.275,30
+Burnley,16,0.281,30
+Chelsea,16,0,30
+Crystal Palace,16,0.0779,30
+Everton,16,0,30
+Fulham,16,0.0411,30
+Leeds,16,0.0008,30
+Leicester,16,0,30
+Liverpool,16,0,30
+Man City,16,0,30
+Man United,16,0,30
+Newcastle,16,0.1482,30
+Sheffield United,16,0,30
+Southampton,16,0.0979,30
+Tottenham,16,0,30
+West Brom,16,0.0001,30
+West Ham,16,0,30
+Wolves,16,0.078,30
+Arsenal,17,0,30
+Aston Villa,17,0,30
+Brighton,17,0.0941,30
+Burnley,17,0.1201,30
+Chelsea,17,0,30
+Crystal Palace,17,0.0101,30
+Everton,17,0,30
+Fulham,17,0.2209,30
+Leeds,17,0,30
+Leicester,17,0,30
+Liverpool,17,0,30
+Man City,17,0,30
+Man United,17,0,30
+Newcastle,17,0.5193,30
+Sheffield United,17,0,30
+Southampton,17,0.0194,30
+Tottenham,17,0,30
+West Brom,17,0.0022,30
+West Ham,17,0,30
+Wolves,17,0.0139,30
+Arsenal,18,0,30
+Aston Villa,18,0,30
+Brighton,18,0.0098,30
+Burnley,18,0.0208,30
+Chelsea,18,0,30
+Crystal Palace,18,0.0001,30
+Everton,18,0,30
+Fulham,18,0.6898,30
+Leeds,18,0,30
+Leicester,18,0,30
+Liverpool,18,0,30
+Man City,18,0,30
+Man United,18,0,30
+Newcastle,18,0.2447,30
+Sheffield United,18,0.0008,30
+Southampton,18,0.0011,30
+Tottenham,18,0,30
+West Brom,18,0.0324,30
+West Ham,18,0,30
+Wolves,18,0.0005,30
+Arsenal,19,0,30
+Aston Villa,19,0,30
+Brighton,19,0,30
+Burnley,19,0,30
+Chelsea,19,0,30
+Crystal Palace,19,0,30
+Everton,19,0,30
+Fulham,19,0.0328,30
+Leeds,19,0,30
+Leicester,19,0,30
+Liverpool,19,0,30
+Man City,19,0,30
+Man United,19,0,30
+Newcastle,19,0.0027,30
+Sheffield United,19,0.0737,30
+Southampton,19,0,30
+Tottenham,19,0,30
+West Brom,19,0.8908,30
+West Ham,19,0,30
+Wolves,19,0,30
+Arsenal,20,0,30
+Aston Villa,20,0,30
+Brighton,20,0,30
+Burnley,20,0,30
+Chelsea,20,0,30
+Crystal Palace,20,0,30
+Everton,20,0,30
+Fulham,20,0.0001,30
+Leeds,20,0,30
+Leicester,20,0,30
+Liverpool,20,0,30
+Man City,20,0,30
+Man United,20,0,30
+Newcastle,20,0,30
+Sheffield United,20,0.9255,30
+Southampton,20,0,30
+Tottenham,20,0,30
+West Brom,20,0.0744,30
+West Ham,20,0,30
+Wolves,20,0,30
