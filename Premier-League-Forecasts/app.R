@@ -31,6 +31,8 @@ df <- read.csv("http://www.football-data.co.uk/mmz4281/2122/E0.csv",
 # Simulation results output from Sims script
 simulations <- read_csv("simulations.csv")
 
+iSim <- 10000 #Define iSim from sims script
+
 # Load team mappings
 team_mapping <- read_csv("team_mapping.csv")
 
@@ -72,7 +74,7 @@ epl_colors <- team_mapping %>%
     select(team, color_pri) %>% 
     rename(Primary = color_pri)
 
-# Matches played results 
+# Matches played results (actuals)
 df_results_table <- df %>% 
     select(Date, Time, HomeTeam, AwayTeam, FTHG, FTAG, B365H, B365D, B365A) %>% 
     mutate(B365H_prob = round((1/B365H)*100,0), B365D_prob = round((1/B365D)*100),0, B365A_prob = round((1/B365A)*100,0)) %>%
@@ -224,8 +226,8 @@ ui <- tags$head(
                tabPanel("Power Rankings", icon = icon("sort"), 
                         h1("English Premier League Power Rankings"),
                         glue("Based on 10,000x simulations of the remainder of the current season. Last updated {update_date}."),
-                        reactableOutput("table"),
-                        screenshotButton(id = "table")
+                        reactableOutput("table_forecasts"),
+                        screenshotButton(id = "table_forecasts")
                ),
                navbarMenu("Season Trends", icon = icon("futbol"), #creates dropdown menu
                           tabPanel("Forecasts",
@@ -263,7 +265,7 @@ ui <- tags$head(
                hr(style = "border-color: #cbcbcb;"),
                fluidRow(
                    column(9,
-                          p("App created by ", tags$a(href = "https://steodose.github.io/steodosescu.github.io/", 'Stephan Teodosescu', target = '_blank'),", August 2021", HTML("&bull;"),
+                          p("App created by ", tags$a(href = "https://steodose.github.io/steodosescu.github.io/", 'Stephan Teodosescu', target = '_blank'),", September 2021", HTML("&bull;"),
                             "Find the code on Github:", tags$a(href = "https://github.com/steodose/NHL-Odds", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
                           p("Questions? Comments? Reach out on Twitter", tags$a(href = "https://twitter.com/steodosescu", tags$i(class = 'fa fa-twitter', style = 'color:#1DA1F2'), target = '_blank'), style = "font-size: 100%"),
                           p(tags$em("Last updated: September 2021"), style = 'font-size:85%'))),
@@ -276,13 +278,14 @@ ui <- tags$head(
 ##### Define SERVER logic required #####
 server <- function(input, output) {
     
-    output$table <- renderReactable({
-        reactable(df_results_table,
+    # Reactable forecasts table
+    output$table_forecasts <- renderReactable({
+        reactable(power_rankings_df,
                   theme = theme_538,
-                  ### add column group header
                   columnGroups = list(
-                      colGroup(name = "Bet365 Pre-Match Odds (%)", 
-                               columns = c("B365H_prob","B365D_prob","B365A_prob"))
+                      colGroup(name = "End-of-season chances based on average of 10,000x simulations", 
+                               columns = c("Points", "Goal Differential","Average Finish","UCL",
+                                           "Relegation","Win Premier League"))
                   ),
                   showSortIcon = TRUE,
                   searchable = TRUE,
@@ -290,67 +293,43 @@ server <- function(input, output) {
                       searchPlaceholder = "SEARCH FOR A TEAM..."),
                   defaultPageSize = 100,
                   columns = list(
-                      `HomeTeam` = colDef(maxWidth = 120,
-                                      name = "Home",
-                                      align = "left"),
-                      `AwayTeam` = colDef(maxWidth = 120,
-                                      name = "Away",
-                                      align = "left"),
-                      `FTHG` = colDef(maxWidth = 80,
-                                    name = "Home Goals",
-                                    style = color_scales(df_results_table, colors = my_color_pal),
-                                    align = "right"),
-                      `FTAG` = colDef(maxWidth = 80,
-                                    name = "Away Goals",
-                                    style = color_scales(df_results_table, colors = my_color_pal),
-                                    align = "right"),
-                      ### add bars using data_bars 
-                      `B365H_prob` = colDef(maxWidth = 400,
-                                         align = "right",
-                                         name = "PH",
-                                         cell = data_bars(df_results_table, 
-                                                          fill_color = "dodgerblue",
-                                                          background = "lightgrey",
-                                                          fill_opacity = 0.8,
-                                                          max_value = 100,
-                                                          scales::number_format(accuracy = 0.1))),
-                      `B365D_prob` = colDef(maxWidth = 400,
-                                         align = "right",
-                                         name = "PD",
-                                         cell = data_bars(df_results_table, 
-                                                          fill_color = "dodgerblue",
-                                                          background = "lightgrey",
-                                                          fill_opacity = 0.8,
-                                                          max_value = 100,
-                                                          scales::number_format(accuracy = 0.1))),
-                      `B365A_prob` = colDef(maxWidth = 400,
-                                         align = "right",
-                                         name = "PA",
-                                         cell = data_bars(df_results_table, 
-                                                          fill_color = "dodgerblue",
-                                                          background = "lightgrey",
-                                                          fill_opacity = 0.8,
-                                                          max_value = 100,
-                                                          scales::number_format(accuracy = 0.1))),
-                      `logo_home` = colDef(cell = function(value) {
-                          image <- img(src = sprintf("logos/%s.png", value), height = "24px", alt = value)
-                          tagList(
-                              div(style = list(display = "inline-block", width = "45px"), image),
-                              value
-                          )
-                      })
-                  ),
-                  
-                  pagination = TRUE,
+                      Team = colDef(name = "Team",
+                                    minWidth = 120,
+                                    align = "left"),
+                      Points = colDef(name = "Points",
+                                      align = "right",
+                                      style = color_scales(power_rankings_df, colors = my_color_pal),
+                                      format =  colFormat(digits = 0)),
+                      `Goal Differential` = colDef(name = "Goal Diff",
+                                                   align = "right",
+                                                   format =  colFormat(digits = 0)),
+                      `Average Finish` = colDef(name = "Average Finish",
+                                                align = "right",
+                                                format =  colFormat(digits = 1)),
+                      `UCL` = colDef(name = "UCL (%)",
+                                     align = "right",
+                                     format =  colFormat(digits = 2)),
+                      `Relegation` = colDef(name = "Relegation (%)",
+                                            align = "right",
+                                            format =  colFormat(digits = 2)),
+                      `Win Premier League` = colDef(name = "Win PL (%)",
+                                                    align = "right",
+                                                    format =  colFormat(digits = 2)),
+                      
+                      ### add logos using embed_img()
+                      logo = colDef(
+                          name = "",
+                          maxWidth = 70,
+                          align = "center",
+                          cell = embed_img(height = "25", width = "28")
+                      )),
+                  pagination = FALSE,
                   compact = TRUE, 
                   borderless = FALSE, 
                   striped = FALSE,
                   fullWidth = FALSE, 
-                  defaultColDef = colDef(align = "center", minWidth = 120),
-        ) %>% 
-            add_title("2021-22 Premier League Fixtures") %>% 
-            add_subtitle(glue("Data as of {update_date}"),font_size = 18) %>% 
-            add_source("Data: www.football-data.co.uk", font_size = 12)
+                  defaultColDef = colDef(align = "center", minWidth = 95)
+                  )
     })
     
     #ggridges points plot
