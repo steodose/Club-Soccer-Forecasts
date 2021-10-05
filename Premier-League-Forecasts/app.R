@@ -233,7 +233,8 @@ ui <- tags$head(
                           tabPanel("Forecasts",
                                    plotOutput("points_plot", width = "50%"),
                                    plotOutput("position_plot", width = "80%")),
-                          tabPanel("Results")),
+                          tabPanel("Results"),
+                          reactableOutput("table")),
                
                # Third tab
                tabPanel("Classification",icon = icon("signal"),
@@ -332,13 +333,92 @@ server <- function(input, output) {
                   )
     })
     
-    #ggridges points plot
+    # Reactable summary of results table
+    
+    output$table <- renderReactable({
+        reactable(df_results_table,
+                  theme = theme_538,
+                  ### add column group header
+                  columnGroups = list(
+                      colGroup(name = "Bet365 Pre-Match Odds (%)", 
+                               columns = c("B365H_prob","B365D_prob","B365A_prob"))
+                  ),
+                  showSortIcon = TRUE,
+                  searchable = TRUE,
+                  language = reactableLang(
+                      searchPlaceholder = "SEARCH FOR A TEAM..."),
+                  defaultPageSize = 100,
+                  columns = list(
+                      `HomeTeam` = colDef(maxWidth = 120,
+                                          name = "Home",
+                                          align = "left"),
+                      `AwayTeam` = colDef(maxWidth = 120,
+                                          name = "Away",
+                                          align = "left"),
+                      `FTHG` = colDef(maxWidth = 80,
+                                      name = "Home Goals",
+                                      style = color_scales(df_results_table, colors = my_color_pal),
+                                      align = "right"),
+                      `FTAG` = colDef(maxWidth = 80,
+                                      name = "Away Goals",
+                                      style = color_scales(df_results_table, colors = my_color_pal),
+                                      align = "right"),
+                      ### add bars using data_bars 
+                      `B365H_prob` = colDef(maxWidth = 400,
+                                            align = "right",
+                                            name = "PH",
+                                            cell = data_bars(df_results_table, 
+                                                             fill_color = "dodgerblue",
+                                                             background = "lightgrey",
+                                                             fill_opacity = 0.8,
+                                                             max_value = 100,
+                                                             scales::number_format(accuracy = 0.1))),
+                      `B365D_prob` = colDef(maxWidth = 400,
+                                            align = "right",
+                                            name = "PD",
+                                            cell = data_bars(df_results_table, 
+                                                             fill_color = "dodgerblue",
+                                                             background = "lightgrey",
+                                                             fill_opacity = 0.8,
+                                                             max_value = 100,
+                                                             scales::number_format(accuracy = 0.1))),
+                      `B365A_prob` = colDef(maxWidth = 400,
+                                            align = "right",
+                                            name = "PA",
+                                            cell = data_bars(df_results_table, 
+                                                             fill_color = "dodgerblue",
+                                                             background = "lightgrey",
+                                                             fill_opacity = 0.8,
+                                                             max_value = 100,
+                                                             scales::number_format(accuracy = 0.1))),
+                      `logo_home` = colDef(cell = function(value) {
+                          image <- img(src = sprintf("logos/%s.png", value), height = "24px", alt = value)
+                          tagList(
+                              div(style = list(display = "inline-block", width = "45px"), image),
+                              value
+                          )
+                      })
+                  ),
+                  
+                  pagination = TRUE,
+                  compact = TRUE, 
+                  borderless = FALSE, 
+                  striped = FALSE,
+                  fullWidth = FALSE, 
+                  defaultColDef = colDef(align = "center", minWidth = 120),
+        ) %>% 
+            add_title("2021-22 Premier League Fixtures") %>% 
+            add_subtitle(glue("Data as of {update_date}"),font_size = 18) %>% 
+            add_source("Data: www.football-data.co.uk", font_size = 12)
+    })
+    
+    # ggridges points plot
     output$points_plot <- renderPlot({
         plot(points_forecast)
     })
     
     
-    #Heatmap position plot
+    # Heatmap position plot
     output$position_plot <- renderPlot({
         plot(position_heatmap)
     })
