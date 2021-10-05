@@ -20,6 +20,7 @@ library(reactable)
 library(reactablefmtr)
 library(htmltools)
 library(ggridges)
+library(ggsci) #for positional heatmap
 
 ##### Load datasets #####
 
@@ -29,6 +30,9 @@ df <- read.csv("http://www.football-data.co.uk/mmz4281/2122/E0.csv",
 
 # Simulation results output from Sims script
 simulations <- read_csv("simulations.csv")
+
+# Load team mappings
+team_mapping <- read_csv("team_mapping.csv")
 
 ##### Data Pre-processing #####
 
@@ -73,11 +77,11 @@ my_color_pal <- c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab")
 
 # Initialize EPL team colors (using this method for 2021-22)
 
-Team <- c('Arsenal', 'Aston Villa', 'Brighton', 'Burnley', 'Chelsea', 'Crystal Palace', 
+Team <- c('Arsenal', 'Aston Villa', 'Brentford', 'Brighton', 'Burnley', 'Chelsea', 'Crystal Palace', 
           'Everton', 'Norwich', 'Leeds', 'Leicester', 'Liverpool', 'Man City', 'Man United', 'Newcastle', 
           'Brentford', 'Southampton', 'Tottenham', 'Wolves','Watford','West Ham')
 
-Primary <- c("#DB0007", "#95BFE5", "#0057B8", "#8ccce5", "#034694","#1b458f", "#274488","#00A650", "#FFCD00",
+Primary <- c("#DB0007", "#95BFE5", "#E30613", "#0057B8", "#8ccce5", "#034694","#1b458f", "#274488","#00A650", "#FFCD00",
              "#003090", "#00a398", "#98c5e9", "#da020e", "#000000", "#ee2737", "#d71920","#001c58",
              "#FDB913","#FBEE23", "#60223b")
 
@@ -101,18 +105,18 @@ points_forecast <- ggplot(simulations, aes(x = Pts, y = fct_reorder(Team, Pts), 
     scale_fill_manual(values = epl_colors$Primary)
 
 
-## 2. Probability by position table (WIP)
+## 2. Probability by position table
 league_table <- table(simulations$Team, simulations$Rank)/iSim
 
 league_table2 <- as.data.frame(league_table) %>% # Convert table to data frame
     rename(Team = Var1, Placement = Var2) %>% 
-    arrange(Placement, desc(Freq))
+    arrange(Placement, desc(Freq, Placement))
 
 league_table2$Freq <- round(league_table2$Freq, 2)
 
 position_heatmap <- ggplot(league_table2, aes(x = Placement, y = reorder(Team, Freq, max))) + 
     geom_tile(aes(fill = Freq), colour = "white") + 
-    scale_fill_gradient(low = "lightblue", high = "steelblue") +
+    scale_fill_material("deep-orange") +
     labs(x = "", y = "",
          title = glue("2021-22 Premier League Forecasts"),
          subtitle = glue("Chances (%) of particuar league finishes after simulating the remainder of the season 10,000x. Thru matches as of {update_date}."),
@@ -123,15 +127,16 @@ position_heatmap <- ggplot(league_table2, aes(x = Placement, y = reorder(Team, F
     geom_text(aes(label = Freq))
 
 
-## 3. Power rankings Reactable table dataframe
+## 3. Power rankings Reactable Table
 power_rankings_df <- simulations %>% 
     group_by(Team) %>% 
     summarise(Points = mean(Pts),
               `Goal Differential` = mean(GD),
               `Average Finish` = mean(as.numeric(Rank))) %>% 
     arrange(`Average Finish`) %>% 
-    mutate(logo = paste0('logos/', Team, '.png')) %>% 
-    select(logo, Team, Points, `Goal Differential`, `Average Finish`)
+    #Not using the below logo mutate for now
+    mutate(logo = paste0('https://github.com/steodose/Club-Soccer-Forecasts/Premier-League-Forecasts/raw/master/logos/', Team, '.png')) %>% 
+    select(Team, Points, `Goal Differential`, `Average Finish`)
 
 # Create UCL and Relegation columns in the simulations data
 league_table3 <- league_table2 %>%
@@ -147,6 +152,72 @@ league_table3 <- league_table2 %>%
 # Left join with Power Rankings DF
 power_rankings_df <- left_join(power_rankings_df, league_table3, by = "Team")
 
+# Clean up Team Mappings dataset
+team_mapping <- team_mapping %>% 
+    select(url_logo_espn, team) %>% 
+    rename(Team = team, logo = url_logo_espn)
+
+# Join with team mappings data
+power_rankings_df <- left_join(power_rankings_df, team_mapping, by = "Team")
+
+power_rankings_df <- power_rankings_df %>% 
+    relocate(logo)
+
+
+# Make table (temporary location for this)
+power_rankings_table <- reactable(
+    power_rankings_df,
+    theme = theme_538,
+    columnGroups = list(
+        colGroup(name = "End-of-season chances based on average of 10,000x simulations", 
+                 columns = c("Points", "Goal Differential","Average Finish","UCL",
+                             "Relegation","Win Premier League"))
+    ),
+    showSortIcon = TRUE,
+    searchable = TRUE,
+    language = reactableLang(
+        searchPlaceholder = "SEARCH FOR A TEAM..."),
+    defaultPageSize = 100,
+    columns = list(
+        Team = colDef(name = "Team",
+                      minWidth = 100,
+                         align = "left"),
+        Points = colDef(name = "Points",
+                               align = "right",
+                               style = color_scales(power_rankings_df, colors = my_color_pal),
+                               format =  colFormat(digits = 0)),
+        `Goal Differential` = colDef(name = "Goal Diff",
+                         align = "right",
+                         format =  colFormat(digits = 0)),
+        `Average Finish` = colDef(name = "Average Finish",
+                         align = "right",
+                         format =  colFormat(digits = 1)),
+        `UCL` = colDef(name = "UCL (%)",
+                              align = "right",
+                              format =  colFormat(digits = 2)),
+        `Relegation` = colDef(name = "Relegation (%)",
+                              align = "right",
+                              format =  colFormat(digits = 2)),
+        `Win Premier League` = colDef(name = "Win PL (%)",
+                                  align = "right",
+                                  format =  colFormat(digits = 2)),
+        
+        ### add logos using embed_img()
+        logo = colDef(
+            name = "",
+            maxWidth = 70,
+            align = "center",
+            cell = embed_img(height = "25", width = "28")
+        )),
+    pagination = FALSE,
+    compact = TRUE, 
+    borderless = FALSE, 
+    striped = FALSE,
+    fullWidth = FALSE, 
+    defaultColDef = colDef(align = "center", minWidth = 95)
+)
+
+power_rankings_table
 
 
 ## 4.
@@ -156,10 +227,10 @@ power_rankings_df <- left_join(power_rankings_df, league_table3, by = "Team")
 # _________________________________________________________________________________________________
 ##### Define UI for application #####
 ui <- tags$head(
-    tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "/PL.png"), #Getting the Premier League 1 logo in the browser window
+    tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "/PL.png"), #Getting the Premier League logo in the browser window
     
-    navbarPage(theme = shinytheme("spacelab"), # Grey navbar theme at the top
-               title = tags$div(img(src="PL.png", height=30), "2021-22 Premier League"),
+    navbarPage(theme = shinytheme("cosmo"), # Navbar theme at the top
+               title = tags$div(img(src="PL_white.png", height=28), "2021-22 EPL"),
                tabPanel("Power Rankings", icon = icon("sort"), 
                         h1("English Premier League Power Rankings"),
                         glue("Based on 10,000x simulations of the remainder of the current season. Last updated {update_date}."),
@@ -167,10 +238,10 @@ ui <- tags$head(
                         screenshotButton(id = "table")
                ),
                navbarMenu("Season Trends", icon = icon("futbol"), #creates dropdown menu
-                          tabPanel("Season Forecasts",
+                          tabPanel("Forecasts",
                                    plotOutput("points_plot", width = "50%"),
                                    plotOutput("position_plot", width = "80%")),
-                          tabPanel("Match Results")),
+                          tabPanel("Results")),
                
                # Third tab
                tabPanel("Classification",icon = icon("signal"),

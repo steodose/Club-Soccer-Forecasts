@@ -1,4 +1,4 @@
-##### Premier League 2020-21 Season Simulations #####
+##### Premier League Season Simulations #####
 ## By: Stephan Teodosescu
 
 ##### Load libraries #####
@@ -16,10 +16,10 @@ library(googlesheets4)
 ##### Building the model #####
 # Inspiration: http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html
 
-matchweek <- 35 #Enter matchweek after the week's games are finished
+matchweek <- 7 #Enter matchweek after the week's games are finished
 
 # Load 2020-21 Premier League Game Data from football-data.com
-df <- read.csv("http://www.football-data.co.uk/mmz4281/2021/E0.csv", 
+df <- read.csv("http://www.football-data.co.uk/mmz4281/2122/E0.csv", 
                stringsAsFactors = FALSE)
 
 sMatch <- paste(df$HomeTeam, df$AwayTeam, sep = " - ")
@@ -105,16 +105,6 @@ for (i in 1:iSim){
     
 }
 
-# Table of probabilities by position
-league_table <- table(df.all$Team, df.all$Rank)/iSim
-league_table2 <- as.data.frame(league_table) %>% # Convert table to data frame for import into Google Sheets and Tableau
-    rename(Team = Var1, Placement = Var2) %>%
-    mutate(MP = matchweek)
 
-
-##### Write to Google Sheets using Tidyverse Googlesheets API #####
-googlesheets_data <- gs4_create("simulations", sheets = league_table2) #Create a new Google Sheet (do this once)
-
-write_sheet(league_table2, ss = googlesheets_data, sheet = "league_table2") #Overwrite with new data
-
-
+##### Write to csv file in the working directory to be used in the app script #####
+write_csv(df.all, "simulations.csv")

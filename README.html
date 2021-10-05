@@ -189,6 +189,29 @@ summary {
 <div id="calculating-individual-match-outcomes" class="section level2">
 <h2>Calculating Individual Match Outcomes</h2>
 <p>The first step in the analysis is to get match data and create arrays with the games played thus far into the season. I’m using data from the fantastic <a href="http://www.football-data.co.uk%20website">football-data.co.uk</a> website. To create odds for each match outcome in the season, I’m using Mark Taylor’s approach by creating match result probabilities <a href="http://thepowerofgoals.blogspot.com.cy/2016/02/how-to-frame-individual-match-outcome.html">described here</a> using historical goals scored. He uses Expected Goals to create these odds, but I’ve substituted that with publicly available Actual Goals. This method works better the deeper we are into the season as variance from teams’ true finishing ability vs their goal figures evens out of the course of the year.</p>
+<div id="building-the-model" class="section level5">
+<h5>Building the model</h5>
+</div>
+</div>
+</div>
+<div id="inspiration-httprstudio-pubs-static.s3.amazonaws.com149923_584734fddffe40799cee564c938948d7.html" class="section level1">
+<h1>Inspiration: <a href="http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html" class="uri">http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html</a></h1>
+<p>matchweek &lt;- 38 #Enter matchweek after the week’s games are finished</p>
+</div>
+<div id="load-2020-21-premier-league-game-data-from-football-data.com" class="section level1">
+<h1>Load 2020-21 Premier League Game Data from football-data.com</h1>
+<p>df &lt;- read.csv(“<a href="http://www.football-data.co.uk/mmz4281/2021/E0.csv" class="uri">http://www.football-data.co.uk/mmz4281/2021/E0.csv</a>”, stringsAsFactors = FALSE)</p>
+<p>sMatch &lt;- paste(df<span class="math inline">\(HomeTeam, df\)</span>AwayTeam, sep = &quot; - &quot;) sTeams &lt;- unique(c(df<span class="math inline">\(HomeTeam, df\)</span>AwayTeam)) %&gt;% sort</p>
+</div>
+<div id="create-tables-of-matches-played-for-home-and-away-teams-and-an-aggregated-table-with-all-matches" class="section level1">
+<h1>Create tables of matches played for home and away teams, and an aggregated table with all matches</h1>
+<p>tmp1 &lt;- df %&gt;% group_by(HomeTeam) %&gt;% summarise(P = length(FTR), Pts = sum((FTHG &gt; FTAG) * 3 + (FTHG == FTAG) * 1), GS = sum(FTHG), GC = sum(FTAG)) %&gt;% ungroup()</p>
+<p>tmp2 &lt;- df %&gt;% group_by(AwayTeam) %&gt;% summarise(P = length(FTR), Pts = sum((FTHG &lt; FTAG) * 3 + (FTHG == FTAG) * 1), GS = sum(FTAG), GC = sum(FTHG)) %&gt;% ungroup()</p>
+</div>
+<div id="aggregate-all-matches-together-in-one-data-frame" class="section level1">
+<h1>Aggregate all matches together in one data frame</h1>
+<p>df.team.stats &lt;- data.frame(Team = sTeams, Points = tmp1<span class="math inline">\(Pts + tmp2\)</span>Pts, GD = (tmp1<span class="math inline">\(GS + tmp2\)</span>GS) - (tmp1<span class="math inline">\(GC + tmp2\)</span>GC), TGS = (tmp1<span class="math inline">\(GS + tmp2\)</span>GS)/(tmp1<span class="math inline">\(P + tmp2\)</span>P), TGC = (tmp1<span class="math inline">\(GC + tmp2\)</span>GC)/(tmp1<span class="math inline">\(P + tmp2\)</span>P), stringsAsFactors = FALSE)</p>
+<p><code># Create all possible combinations between the league teams, removing  # the cases where a team plays itself, and looking for combinations  # which have not already been played.  df.new &lt;- expand.grid(HomeTeam = sTeams, AwayTeam = sTeams, stringsAsFactors = FALSE) %&gt;%     filter(HomeTeam != AwayTeam) %&gt;%     mutate(Match = paste(HomeTeam, AwayTeam, sep = &quot; - &quot;)) %&gt;%     filter(!(Match %in% sMatch)) %&gt;%     select(-Match) %&gt;%     mutate(HG = mean(df$FTHG),            AG = mean(df$FTAG),            TG = (mean(df$FTHG) + mean(df$FTAG))/2) %&gt;%     right_join(subset(df.team.stats, select = -c(Points, GD)),  by = c(&quot;HomeTeam&quot; = &quot;Team&quot;)) %&gt;%     right_join(subset(df.team.stats, select = -c(Points, GD)), by = c(&quot;AwayTeam&quot; = &quot;Team&quot;)) %&gt;%     setNames(c(&quot;HomeTeam&quot;, &quot;AwayTeam&quot;, &quot;HG&quot;, &quot;AG&quot;, &quot;TG&quot;,                 &quot;GS.by.H&quot;, &quot;GC.by.H&quot;, &quot;GS.by.A&quot;, &quot;GC.by.A&quot;)) %&gt;%     mutate(ExpHG = (GS.by.H / TG) * (GC.by.A / TG) * (HG / TG) * TG, #Expected goals for home teams based on League average rates so far            ExpAG = (GS.by.A / TG) * (GC.by.H / TG) * (AG / TG) * TG) %&gt;% #Expected goals for away teams based on League average rates so far     ungroup()</code></p>
 <p>As described by Taylor, the method uses 1) the average number of goals scored by home and away teams in the given campaign and 2) The average number of goals scored and conceded by the two teams in question in any match. As an example, let’s do this analysis for a single match: Burnley at home vs. Liverpool. And let’s say Home teams are scoring 0.25 goals per game more than visitors – 1.49 compared to 1.24, and the average game has 1.37 expected goals per team.</p>
 <p>Note GS = Goals Scored and GC = Goals Conceded in the table below.</p>
 <table style="width:100%;">
@@ -246,7 +269,6 @@ summary {
 </tr>
 </tbody>
 </table>
-</div>
 <div id="simulating-all-season-fixtures" class="section level2">
 <h2>Simulating all season fixtures</h2>
 <p>The above shows how we get to probabilities for individual match outcomes. Next, we use these outcomes to simulate an entire season…10,000 times. For this model we’re using independent Poisson distributions with means <code>ExpHG</code> and <code>ExpAG</code> to simulate results from.</p>
