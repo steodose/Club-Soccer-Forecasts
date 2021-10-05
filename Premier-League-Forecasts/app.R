@@ -36,14 +36,6 @@ team_mapping <- read_csv("team_mapping.csv")
 
 ##### Data Pre-processing #####
 
-df_results_table <- df %>% 
-    select(Date, Time, HomeTeam, AwayTeam, FTHG, FTAG, B365H, B365D, B365A) %>% 
-    mutate(B365H_prob = round((1/B365H)*100,0), B365D_prob = round((1/B365D)*100),0, B365A_prob = round((1/B365A)*100,0)) %>%
-    #mutate('logo_home' = paste0('logos/', Home, '.png')) %>% 
-    #mutate('logo_away' = paste0('logos/', Away, '.png')) %>%
-    select(Date, Time, HomeTeam, AwayTeam, FTHG, FTAG, B365H_prob, B365D_prob, B365A_prob)
-
-
 # Fetch current date for updating visualizations
 update_date <- max(df$Date) %>% 
     format(format="%B %d")
@@ -76,16 +68,17 @@ theme_538 <- function() {
 my_color_pal <- c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab")
 
 # Initialize EPL team colors (using this method for 2021-22)
+epl_colors <- team_mapping %>% 
+    select(team, color_pri) %>% 
+    rename(Primary = color_pri)
 
-Team <- c('Arsenal', 'Aston Villa', 'Brentford', 'Brighton', 'Burnley', 'Chelsea', 'Crystal Palace', 
-          'Everton', 'Norwich', 'Leeds', 'Leicester', 'Liverpool', 'Man City', 'Man United', 'Newcastle', 
-          'Brentford', 'Southampton', 'Tottenham', 'Wolves','Watford','West Ham')
-
-Primary <- c("#DB0007", "#95BFE5", "#E30613", "#0057B8", "#8ccce5", "#034694","#1b458f", "#274488","#00A650", "#FFCD00",
-             "#003090", "#00a398", "#98c5e9", "#da020e", "#000000", "#ee2737", "#d71920","#001c58",
-             "#FDB913","#FBEE23", "#60223b")
-
-epl_colors <- tibble(Team, Primary)
+# Matches played results 
+df_results_table <- df %>% 
+    select(Date, Time, HomeTeam, AwayTeam, FTHG, FTAG, B365H, B365D, B365A) %>% 
+    mutate(B365H_prob = round((1/B365H)*100,0), B365D_prob = round((1/B365D)*100),0, B365A_prob = round((1/B365A)*100,0)) %>%
+    #mutate('logo_home' = paste0('logos/', Home, '.png')) %>% 
+    #mutate('logo_away' = paste0('logos/', Away, '.png')) %>%
+    select(Date, Time, HomeTeam, AwayTeam, FTHG, FTAG, B365H_prob, B365D_prob, B365A_prob)
 
 
 ##### Plots for publication in App #####
@@ -218,9 +211,6 @@ power_rankings_table <- reactable(
 )
 
 power_rankings_table
-
-
-## 4.
 
 
 
