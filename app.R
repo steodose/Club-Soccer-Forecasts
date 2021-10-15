@@ -28,11 +28,13 @@ library(ggsci) #for positional heatmap
 df <- read.csv("http://www.football-data.co.uk/mmz4281/2122/E0.csv", 
                stringsAsFactors = FALSE)
 
-# Simulation results output from Sims script
-simulations <- read_csv("simulations.csv")
+# Simulation results output from Sims script (outputted using GitHub actions)
+simulations <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/simulations.csv' %>% 
+    read_csv()
 
 # Load team mappings
 team_mapping <- read_csv("team_mapping.csv")
+
 
 ##### Data Pre-processing #####
 
@@ -66,6 +68,62 @@ theme_538 <- function() {
 }
 
 
+# Define table theme for gt tables. Comes from Tom Mock's blog post.
+
+gt_theme_538 <- function(data,...) {
+    data %>%
+        # Add team logos w/ web_image
+        text_transform(
+            locations = cells_body(
+                vars(url_logo_espn)
+            ),
+            fn = function(x) {
+                web_image(
+                    url = x,
+                    height = 25
+                )
+            }
+        ) %>%
+        # Relabel columns
+        cols_label(
+            url_logo_espn = ""
+        ) %>%
+        opt_all_caps()  %>%
+        opt_table_font(
+            font = list(
+                google_font("Chivo"),
+                default_fonts()
+            )
+        ) %>%
+        tab_style(
+            style = cell_borders(
+                sides = "bottom", color = "transparent", weight = px(2)
+            ),
+            locations = cells_body(
+                columns = TRUE,
+                # This is a relatively sneaky way of changing the bottom border
+                # Regardless of data size
+                rows = nrow(data$`_data`)
+            )
+        )  %>% 
+        tab_options(
+            column_labels.background.color = "white",
+            table.border.top.width = px(3),
+            table.border.top.color = "transparent",
+            table.border.bottom.color = "transparent",
+            table.border.bottom.width = px(3),
+            column_labels.border.top.width = px(3),
+            column_labels.border.top.color = "transparent",
+            column_labels.border.bottom.width = px(3),
+            column_labels.border.bottom.color = "black",
+            data_row.padding = px(3),
+            source_notes.font.size = 12,
+            table.font.size = 16,
+            heading.align = "left",
+            ...
+        ) 
+}
+
 # Define color palette to use in tables
 my_color_pal <- c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab")
 
@@ -90,7 +148,7 @@ points_forecast <- ggplot(simulations, aes(x = Pts, y = fct_reorder(Team, Pts), 
     geom_density_ridges_gradient(show.legend = FALSE) +
     labs(x = "Points", y = "",
          title = glue("2021-22 Premier League: Thru matches as of {update_date}."),
-         subtitle = "Expected points after simulating the remainder of the season 10,000x",
+         subtitle = "Distribution of expected points after simulating the remainder of the season 10,000x",
          caption = "Data: football-data.co.uk"
     ) +
     theme_bw() +
@@ -158,6 +216,62 @@ power_rankings_df <- left_join(power_rankings_df, team_mapping, by = "Team")
 power_rankings_df <- power_rankings_df %>% 
     relocate(logo)
 
+
+## 4.  Create current league table
+home <- df_results_table %>% 
+    group_by(HomeTeam) %>%
+    summarize(
+        GS = sum(FTHG, na.rm = TRUE),
+        GC = sum(FTAG, na.rm = TRUE),
+        Pts = sum((FTHG > FTAG) * 3 + (FTHG== FTAG) * 1, na.rm = TRUE)) %>% 
+    ungroup()
+
+away <- df_results_table %>% 
+    group_by(AwayTeam) %>%
+    summarize(
+        GS = sum(FTAG, na.rm = TRUE),
+        GC = sum(FTHG, na.rm = TRUE),
+        Pts = sum((FTAG > FTHG) * 3 + (FTHG== FTAG) * 1, na.rm = TRUE)) %>% 
+    ungroup()
+
+results_summary_table <- inner_join(home, away, by = c("HomeTeam" = "AwayTeam")) %>% 
+    group_by(HomeTeam) %>% 
+    mutate(
+        GS = sum(GS.x, GS.y),
+        GC = sum(GC.x, GC.y),
+        Points = sum(Pts.x, Pts.y)) %>%
+    rename("Squad" = "HomeTeam") %>% 
+    mutate(
+        GD = GS-GC,
+    ) %>% 
+    select(Squad, Points, GS, GC, GD)
+
+results_summary_table <- results_summary_table %>%
+    left_join(team_mapping, by = c("Squad" = "team")) %>% 
+    relocate(url_logo_espn)
+
+results_summary_table <- results_summary_table %>%
+    relocate(url_logo_espn) %>% 
+    arrange(desc(Points), desc(GD)) %>% 
+    ungroup() %>% 
+    mutate(Rank = row_number()) %>% 
+    relocate(Rank) %>% 
+    select(Rank:GD)
+
+# Make current standings table
+summary_table_gt <- results_summary_table %>%
+    gt() %>%
+    data_color(columns = 4,
+               colors = scales::col_numeric(
+                   palette = c("white", "#3fc1c9"),
+                   domain = NULL)) %>%
+    gt_theme_538() %>%
+    cols_align(align = "left",
+               columns = 1) %>%
+    tab_header(title = md("**2021-22 Premier League Table**"),
+               subtitle = glue("Thru matches played as of {update_date}.")) %>%
+    tab_source_note(
+        source_note = md("DATA: www.football-data.co.uk"))
 
 # _________________________________________________________________________________________________
 ##### Define UI for application #####
