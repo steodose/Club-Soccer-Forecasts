@@ -75,7 +75,7 @@ gt_theme_538 <- function(data,...) {
         # Add team logos w/ web_image
         text_transform(
             locations = cells_body(
-                vars(url_logo_espn)
+                vars(logo)
             ),
             fn = function(x) {
                 web_image(
@@ -86,7 +86,7 @@ gt_theme_538 <- function(data,...) {
         ) %>%
         # Relabel columns
         cols_label(
-            url_logo_espn = ""
+            logo = ""
         ) %>%
         opt_all_caps()  %>%
         opt_table_font(
@@ -246,12 +246,9 @@ results_summary_table <- inner_join(home, away, by = c("HomeTeam" = "AwayTeam"))
     ) %>% 
     select(Squad, Points, GS, GC, GD)
 
-results_summary_table <- results_summary_table %>%
-    left_join(team_mapping, by = c("Squad" = "team")) %>% 
-    relocate(url_logo_espn)
-
-results_summary_table <- results_summary_table %>%
-    relocate(url_logo_espn) %>% 
+results_summary_table2 <- results_summary_table %>% 
+    left_join(team_mapping, by = c("Squad" = "Team")) %>% 
+    relocate(logo) %>% 
     arrange(desc(Points), desc(GD)) %>% 
     ungroup() %>% 
     mutate(Rank = row_number()) %>% 
@@ -259,7 +256,7 @@ results_summary_table <- results_summary_table %>%
     select(Rank:GD)
 
 # Make current standings table
-summary_table_gt <- results_summary_table %>%
+summary_table_gt <- results_summary_table2 %>%
     gt() %>%
     data_color(columns = 4,
                colors = scales::col_numeric(
