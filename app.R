@@ -217,7 +217,7 @@ power_rankings_df <- power_rankings_df %>%
     relocate(logo)
 
 
-## 4.  Create current league table
+## 4.  Current league table
 home <- df_results_table %>% 
     group_by(HomeTeam) %>%
     summarize(
@@ -255,7 +255,7 @@ results_summary_table2 <- results_summary_table %>%
     relocate(Rank) %>% 
     select(Rank:GD)
 
-# Make current standings table
+# Make current standings table using gt package
 summary_table_gt <- results_summary_table2 %>%
     gt() %>%
     data_color(columns = 4,
@@ -285,9 +285,10 @@ ui <- tags$head(
                ),
                
                # Second tab
-               tabPanel("Forecasts", icon = icon("poll"),
-                        plotOutput("points_plot", width = "50%"),
-                        plotOutput("position_plot", width = "80%")),
+               tabPanel("Standings", icon = icon("signal"),
+                        h1("Premier League Standings"),
+                        gt_output("actuals_table")),
+               
                
                # Third tab
                tabPanel("Results", icon = icon("futbol"),
@@ -297,8 +298,8 @@ ui <- tags$head(
                ),
                
                # Fourth tab
-               tabPanel("Classification",icon = icon("signal"),
-                        h1("Premier League Classification"),
+               tabPanel("Forecasts",icon = icon("poll"),
+                        h1("Premier League Forecasts"),
                         "Every NHL franchise's relative strength after every game dating back to the league's inception. An Elo rating of ~1500 is considered average. An expansion team's initial Elo is set to be 1380, and a team's final Elo from the end of one season is reverted toward a mean of 1505 by 30 percent at the start of the following season.",
                         "Elo ratings measure a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory. Information is collected from Neil Paine (FiveThirtyEight).",
                         br(),
@@ -310,7 +311,10 @@ ui <- tags$head(
                                            selected="Man City", multiple = FALSE),
                             width = 4),
                         
-                        mainPanel(withSpinner(plotOutput("classification_plot")), width = 8),
+                        mainPanel(withSpinner(plotOutput("classification_plot")), 
+                                  plotOutput("points_plot", width = "100%"),
+                                  plotOutput("position_plot", width = "100%"), 
+                                  width = 8),
                ),
                
                # About info tab
@@ -326,7 +330,7 @@ ui <- tags$head(
                hr(style = "border-color: #cbcbcb;"),
                fluidRow(
                    column(9,
-                          p("App created by ", tags$a(href = "https://steodose.github.io/steodosescu.github.io/", 'Stephan Teodosescu', target = '_blank'),", September 2021", HTML("&bull;"),
+                          p("App created by ", tags$a(href = "https://steodose.github.io/steodosescu.github.io/", 'Stephan Teodosescu', target = '_blank'),", October 2021", HTML("&bull;"),
                             "Find the code on Github:", tags$a(href = "https://github.com/steodose/NHL-Odds", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
                           p("Questions? Comments? Reach out on Twitter", tags$a(href = "https://twitter.com/steodosescu", tags$i(class = 'fa fa-twitter', style = 'color:#1DA1F2'), target = '_blank'), style = "font-size: 100%"),
                           p(tags$em("Last updated: September 2021"), style = 'font-size:85%'))),
@@ -471,6 +475,14 @@ server <- function(input, output) {
             add_subtitle(glue("Data as of {update_date}"),font_size = 18) %>% 
             add_source("Data: www.football-data.co.uk", font_size = 12)
     })
+    
+    # Current standing gt table
+    output$actuals_table <-
+        render_gt(
+            expr = summary_table_gt,
+            height = px(700),
+            width = px(900)
+        )
     
     # ggridges points plot
     output$points_plot <- renderPlot({
