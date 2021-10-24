@@ -9,6 +9,7 @@ library(shinyscreenshot)
 library(tidyverse)
 library(teamcolors)
 library(gt) #for 538-themed tables
+library(gtExtras)
 library(extrafont) #for adding in new fonts
 library(ggtext)
 library(RCurl)
@@ -219,19 +220,33 @@ power_rankings_df <- power_rankings_df %>%
 
 ## 4.  Current league table
 home <- df_results_table %>% 
-    group_by(HomeTeam) %>%
+    group_by(HomeTeam) %>% 
+    mutate(win = if_else(FTHG > FTAG, 1, 0),
+           loss = if_else(FTAG > FTHG, 1, 0),
+           draw = if_else(FTHG == FTAG, 1, 0)) %>% 
     summarize(
         GS = sum(FTHG, na.rm = TRUE),
         GC = sum(FTAG, na.rm = TRUE),
-        Pts = sum((FTHG > FTAG) * 3 + (FTHG== FTAG) * 1, na.rm = TRUE)) %>% 
+        Pts = sum((FTHG > FTAG) * 3 + (FTHG== FTAG) * 1, na.rm = TRUE),
+        win = sum(win),
+        loss = sum(loss),
+        draw = sum(draw),
+        MP = n()) %>% 
     ungroup()
 
 away <- df_results_table %>% 
     group_by(AwayTeam) %>%
+    mutate(win = if_else(FTAG > FTHG, 1, 0),
+           loss = if_else(FTHG > FTAG, 1, 0),
+           draw = if_else(FTHG == FTAG, 1, 0)) %>%
     summarize(
         GS = sum(FTAG, na.rm = TRUE),
         GC = sum(FTHG, na.rm = TRUE),
-        Pts = sum((FTAG > FTHG) * 3 + (FTHG== FTAG) * 1, na.rm = TRUE)) %>% 
+        Pts = sum((FTAG > FTHG) * 3 + (FTHG== FTAG) * 1, na.rm = TRUE),
+        win = sum(win),
+        loss = sum(loss),
+        draw = sum(draw),
+        MP = n()) %>% 
     ungroup()
 
 results_summary_table <- inner_join(home, away, by = c("HomeTeam" = "AwayTeam")) %>% 
@@ -239,12 +254,15 @@ results_summary_table <- inner_join(home, away, by = c("HomeTeam" = "AwayTeam"))
     mutate(
         GS = sum(GS.x, GS.y),
         GC = sum(GC.x, GC.y),
-        Points = sum(Pts.x, Pts.y)) %>%
-    rename("Squad" = "HomeTeam") %>% 
-    mutate(
         GD = GS-GC,
-    ) %>% 
-    select(Squad, Points, GS, GC, GD)
+        Points = sum(Pts.x, Pts.y),
+        MP = sum(MP.x + MP.y),
+        win_perc = Points/(MP*3),
+        win = sum(win.x, win.y),
+        draw = sum(draw.x, draw.y),
+        loss = sum(loss.x, loss.y)) %>%
+    rename("Squad" = "HomeTeam") %>%
+    select(Squad, Points, MP, GS:loss)
 
 results_summary_table2 <- results_summary_table %>% 
     left_join(team_mapping, by = c("Squad" = "Team")) %>% 
@@ -253,22 +271,37 @@ results_summary_table2 <- results_summary_table %>%
     ungroup() %>% 
     mutate(Rank = row_number()) %>% 
     relocate(Rank) %>% 
-    select(Rank:GD)
+    select(Rank:loss) %>% 
+    mutate(list_data = list(c(win,draw,loss)))
+    
+# create list_data column for table graphic
+results_summary_table3 <- results_summary_table2 %>% 
+    gather(attr_num, list_data, c(win,draw,loss)) %>%  #could use pivot_longer here
+    group_by_at(vars(-attr_num, -list_data)) %>% 
+    summarise(list_data = list(list_data)) %>% 
+    ungroup()
+
 
 # Make current standings table using gt package
-summary_table_gt <- results_summary_table2 %>%
+summary_table_gt <- results_summary_table3 %>%
     gt() %>%
     data_color(columns = 4,
                colors = scales::col_numeric(
                    palette = c("white", "#3fc1c9"),
-                   domain = NULL)) %>%
+                   domain = NULL)
+               ) %>%
     gt_theme_538() %>%
     cols_align(align = "left",
                columns = 1) %>%
     tab_header(title = md("**2021-22 Premier League Table**"),
                subtitle = glue("Thru matches played as of {update_date}.")) %>%
     tab_source_note(
-        source_note = md("DATA: www.football-data.co.uk"))
+        source_note = md("DATA: www.football-data.co.uk")) %>% 
+    gt_plt_bar_pct(column = win_perc, scaled = FALSE, fill = "navy", background = "gray") %>% 
+    gt_plt_bar_stack(list_data, width = 65,
+                     labels = c("  WINS  ", "  DRAWS  ", "  LOSSES  "),
+                     palette= c("#ff4343", "#bfbfbf", "#0a1c2b"))
+    
 
 # _________________________________________________________________________________________________
 ##### Define UI for application #####
@@ -279,14 +312,14 @@ ui <- tags$head(
                title = tags$div(img(src="PL_white.png", height=28), "2021-22 EPL"),
                tabPanel("Power Rankings", icon = icon("sort"), 
                         h1("English Premier League Power Rankings"),
-                        glue("Based on 10,000x simulations of the remainder of the current season. Last updated {update_date}."),
+                        glue("Welcome to our EPL projections and probabilities page where you will find each squad’s projected points total, goal differential, average finish, and its probability of Champions League qualification or relegation. These odds are based on 10,000x simulations of the remainder of the current season. The data are refreshed on Mondays after the week's matches have concluded. Last updated {update_date}."),
                         reactableOutput("table_forecasts"),
                         screenshotButton(id = "table_forecasts")
                ),
                
                # Second tab
                tabPanel("Standings", icon = icon("signal"),
-                        h1("Premier League Standings"),
+                        h1("Current League Standings"),
                         gt_output("actuals_table")),
                
                
@@ -299,13 +332,12 @@ ui <- tags$head(
                
                # Fourth tab
                tabPanel("Forecasts",icon = icon("poll"),
-                        h1("Premier League Forecasts"),
-                        "Every NHL franchise's relative strength after every game dating back to the league's inception. An Elo rating of ~1500 is considered average. An expansion team's initial Elo is set to be 1380, and a team's final Elo from the end of one season is reverted toward a mean of 1505 by 30 percent at the start of the following season.",
-                        "Elo ratings measure a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory. Information is collected from Neil Paine (FiveThirtyEight).",
+                        h1("Premier League Projected Classification"),
+                        "The below shows every Premier League team's chances at particular league finishes and distribution of expected points, according to our model.",
                         br(),
                         br(),
                         sidebarPanel(
-                            helpText("Select a team to examine its chances of particular league finishes based on the model."),
+                            helpText("Select a team to examine its distribution of predicted league classification."),
                             selectizeInput("teamInput", "Team",
                                            choices = unique(league_table2$Team),  
                                            selected="Man City", multiple = FALSE),
@@ -348,7 +380,7 @@ server <- function(input, output) {
         reactable(power_rankings_df,
                   theme = theme_538,
                   columnGroups = list(
-                      colGroup(name = "End-of-season chances based on average of 10,000x simulations", 
+                      colGroup(name = "Average of 10,000x simulations", 
                                columns = c("Points", "Goal Differential","Average Finish","UCL",
                                            "Relegation","Win Premier League"))
                   ),
@@ -361,18 +393,19 @@ server <- function(input, output) {
                       Team = colDef(name = "Team",
                                     minWidth = 120,
                                     align = "left"),
-                      Points = colDef(name = "Points",
+                      Points = colDef(name = "Proj. Points",
                                       align = "right",
                                       style = color_scales(power_rankings_df, colors = my_color_pal),
                                       format =  colFormat(digits = 0)),
-                      `Goal Differential` = colDef(name = "Goal Diff",
+                      `Goal Differential` = colDef(name = "Proj. Goal Diff",
                                                    align = "right",
                                                    format =  colFormat(digits = 0)),
-                      `Average Finish` = colDef(name = "Average Finish",
+                      `Average Finish` = colDef(name = "Proj. Finish",
                                                 align = "right",
                                                 format =  colFormat(digits = 1)),
                       `UCL` = colDef(name = "UCL (%)",
                                      align = "right",
+                                     style = list(borderLeft = "2px solid #555"),
                                      format =  colFormat(digits = 2)),
                       `Relegation` = colDef(name = "Relegation (%)",
                                             align = "right",
@@ -506,7 +539,8 @@ server <- function(input, output) {
     output$classification_plot <- renderPlot({
         
         ggplot(d(), aes(x = Placement, y = Freq, fill = Team)) +
-            geom_bar(stat = "identity") +
+            geom_bar(position = "dodge", stat = "identity") +
+            geom_text(aes(label=Freq), position=position_dodge(width=0.9), vjust=-0.25) +
             labs(
                 x = "Predicted League Finish", y = "Chance (%)",
                 title = "2021-22 Premier League",
