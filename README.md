@@ -59,6 +59,8 @@ Data
 
 The data come from [football-data.co.uk](http://www.football-data.co.uk/), and is refreshed after all the games have been completed for the week, usually on Mondays.
 
+[![update-data](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer.yaml/badge.svg)](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer.yaml)
+
 Learn More
 ------------
 
