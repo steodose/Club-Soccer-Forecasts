@@ -1,7 +1,7 @@
 name: update-data
 on:
   schedule:
-    - cron: "30 23 * * MON" # Every Monday at 11pm UTC (4pm Pacific)
+    - cron: "30 23 * * TUE" # Every Tuesday at 11pm UTC (4pm Pacific)
 
 jobs:
   generate-data:
