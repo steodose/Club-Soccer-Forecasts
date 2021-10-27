@@ -1,7 +1,7 @@
 name: update-data
 on:
   schedule:
-    - cron: "30 23 * * TUE" # Every Tuesday at 11pm UTC (4pm Pacific)
+    - cron: "30 01 * * WED" # Every Wednesday at 11pm UTC (4pm Pacific)
 
 jobs:
   generate-data:
@@ -29,7 +29,7 @@ jobs:
         shell: Rscript {0}
   
       - name: Generate data # Run the script
-        run: source("R/Premier_League_Sims_Script.R")
+        run: source("Premier_League_Sims_Script.R")
         shell: Rscript {0}
       
       - name: Commit files # Commit changes
