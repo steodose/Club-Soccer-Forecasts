@@ -1,7 +1,7 @@
 name: update-data
 on:
   schedule:
-    - cron: "30 23 * * MON" # Every Monday at 11pm UTC (4pm Pacific)
+    - cron: "30 01 * * WED" # Every Wednesday at 11pm UTC (4pm Pacific)
 
 jobs:
   generate-data:
@@ -15,7 +15,7 @@ jobs:
       - name: Setup renv # Set up R env to install packages
         run: |
           install.packages('remotes')
-          remotes::install_github("rstudio/renv")
+          install.packages("renv")
         shell: Rscript {0}
         
       - uses: actions/cache@v2 # Cache packages so won't be compiled everytime job is run
@@ -29,7 +29,7 @@ jobs:
         shell: Rscript {0}
   
       - name: Generate data # Run the script
-        run: source("R/Premier_League_Sims_Script.R")
+        run: source("Premier_League_Sims_Script.R")
         shell: Rscript {0}
       
       - name: Commit files # Commit changes
