@@ -10,7 +10,7 @@ library(tidyverse)
 library(teamcolors)
 library(gt) #for 538-themed tables
 library(gtExtras)
-library(extrafont) #for adding in new fonts
+library(extrafont) #for adding in new fonts for R graphics
 library(ggtext)
 library(RCurl)
 library(magick)
@@ -332,7 +332,7 @@ ui <- tags$head(
                
                # Fourth tab
                tabPanel("Forecasts",icon = icon("poll"),
-                        h1("Premier League Projected Classification"),
+                        h1("Premier League Projections"),
                         "The below shows every Premier League team's chances at particular league finishes and distribution of expected points, according to our model.",
                         br(),
                         br(),

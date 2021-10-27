@@ -10,13 +10,12 @@ library(gt) #for 538-themed tables
 library(extrafont) #for adding in new fonts
 library(rvest) #for web scraping
 library(ggtext)
-library(googlesheets4)
 
 
 ##### Building the model #####
 # Inspiration: http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html
 
-matchweek <- 8 #Enter matchweek after the week's games are finished
+matchweek <- 9 #Enter matchweek after the week's games are finished
 
 # Load 2020-21 Premier League Game Data from football-data.com
 df <- read.csv("http://www.football-data.co.uk/mmz4281/2122/E0.csv", 
