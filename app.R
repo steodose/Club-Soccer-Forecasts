@@ -12,7 +12,7 @@ library(gt) #for 538-themed tables
 library(gtExtras)
 library(extrafont) #for adding in new fonts for R graphics
 library(ggtext)
-library(RCurl)
+#library(RCurl)
 library(magick)
 library(ggimage) #for working with team logos
 library(webshot) #saving high quality images of gt tables
