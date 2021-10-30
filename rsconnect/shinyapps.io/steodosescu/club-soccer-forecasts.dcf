@@ -5,7 +5,7 @@ account: steodosescu
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4798018
-bundleId: 5170130
+bundleId: 5192510
 url: https://steodosescu.shinyapps.io/club-soccer-forecasts/
-when: 1635002625.98278
-lastSyncTime: 1635002625.98291
+when: 1635565261.05842
+lastSyncTime: 1635565261.05844

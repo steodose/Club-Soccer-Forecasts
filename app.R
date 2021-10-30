@@ -12,7 +12,7 @@ library(gt) #for 538-themed tables
 library(gtExtras)
 library(extrafont) #for adding in new fonts for R graphics
 library(ggtext)
-#library(RCurl)
+library(RCurl)
 library(magick)
 library(ggimage) #for working with team logos
 library(webshot) #saving high quality images of gt tables
@@ -98,7 +98,7 @@ gt_theme_538 <- function(data,...) {
         ) %>%
         tab_style(
             style = cell_borders(
-                sides = "bottom", color = "transparent", weight = px(2)
+                sides = "bottom", color = "white", weight = px(2) #used to be transparent rather than white
             ),
             locations = cells_body(
                 columns = TRUE,
@@ -110,11 +110,11 @@ gt_theme_538 <- function(data,...) {
         tab_options(
             column_labels.background.color = "white",
             table.border.top.width = px(3),
-            table.border.top.color = "transparent",
-            table.border.bottom.color = "transparent",
+            table.border.top.color = "white", #used to be transparent
+            table.border.bottom.color = "white", #used to be transparent
             table.border.bottom.width = px(3),
             column_labels.border.top.width = px(3),
-            column_labels.border.top.color = "transparent",
+            column_labels.border.top.color = "white", #used to be transparent
             column_labels.border.bottom.width = px(3),
             column_labels.border.bottom.color = "black",
             data_row.padding = px(3),
@@ -291,6 +291,14 @@ summary_table_gt <- results_summary_table3 %>%
                    domain = NULL)
                ) %>%
     gt_theme_538() %>%
+    tab_style(
+        style = cell_borders(sides = "bottom", color = "black", weight = px(1)),
+        locations = cells_body(rows = 4)
+    ) %>%
+    tab_style(
+        style = cell_borders(sides = "bottom", color = "black", weight = px(1)),
+        locations = cells_body(rows = 17)
+    ) %>%
     cols_align(align = "left",
                columns = 1) %>%
     tab_header(title = md("**2021-22 Premier League Table**"),
@@ -309,7 +317,10 @@ ui <- tags$head(
     tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "/PL.png"), #Getting the Premier League logo in the browser window
     
     navbarPage(theme = shinytheme("cosmo"), # Navbar theme at the top
-               title = tags$div(img(src="PL_white.png", height=28), "2021-22 EPL"),
+               tags$head(tags$style(HTML('.navbar-static-top {background-color: #3d195b;}',
+                                         '.navbar-default .navbar-nav>.active>a {background-color: #3d195b;}'))), #EPL purple theme for navbar
+               
+               title = tags$div(img(src="epl-logo-white.png", height=28), "2021-22 EPL"),
                tabPanel("Power Rankings", icon = icon("sort"), 
                         h1("English Premier League Power Rankings"),
                         glue("Welcome to our EPL projections and probabilities page where you will find each squad’s projected points total, goal differential, average finish, and its probability of Champions League qualification or relegation. These odds are based on 10,000x simulations of the remainder of the current season. The data are refreshed on Mondays after the week's matches have concluded. Last updated {update_date}."),
@@ -381,8 +392,9 @@ server <- function(input, output) {
                   theme = theme_538,
                   columnGroups = list(
                       colGroup(name = "Average of 10,000x simulations", 
-                               columns = c("Points", "Goal Differential","Average Finish","UCL",
-                                           "Relegation","Win Premier League"))
+                               columns = c("Points", "Goal Differential","Average Finish")),
+                      colGroup(name = "Chance of...", 
+                               columns = c("UCL", "Relegation","Win Premier League"))
                   ),
                   showSortIcon = TRUE,
                   searchable = TRUE,
@@ -402,16 +414,25 @@ server <- function(input, output) {
                                                    format =  colFormat(digits = 0)),
                       `Average Finish` = colDef(name = "Proj. Finish",
                                                 align = "right",
+                                                style = list(borderRight = "2px solid #555"),
                                                 format =  colFormat(digits = 1)),
                       `UCL` = colDef(name = "UCL (%)",
                                      align = "right",
-                                     style = list(borderLeft = "2px solid #555"),
+                                     style = color_scales(power_rankings_df, colors = paletteer::paletteer_d(
+                                         palette = "ggsci::amber_material"
+                                     )),
                                      format =  colFormat(digits = 2)),
                       `Relegation` = colDef(name = "Relegation (%)",
                                             align = "right",
+                                            style = color_scales(power_rankings_df, colors = paletteer::paletteer_d(
+                                                palette = "ggsci::amber_material"
+                                            )),
                                             format =  colFormat(digits = 2)),
                       `Win Premier League` = colDef(name = "Win PL (%)",
                                                     align = "right",
+                                                    style = color_scales(power_rankings_df, paletteer::paletteer_d(
+                                                        palette = "ggsci::amber_material"
+                                                    )),
                                                     format =  colFormat(digits = 2)),
                       
                       ### add logos using embed_img()
