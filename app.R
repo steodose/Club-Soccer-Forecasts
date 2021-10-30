@@ -22,6 +22,7 @@ library(reactablefmtr)
 library(htmltools)
 library(ggridges)
 library(ggsci) #for positional heatmap
+library(sparkline) #for positional barplot in reactable standings table
 
 ##### Load datasets #####
 
@@ -201,7 +202,8 @@ league_table3 <- league_table2 %>%
     group_by(Team) %>% 
     summarise(UCL = sum(UCL),
               Relegation = sum(Relegation),
-              `Win Premier League` = sum(`Win Premier League`))
+              `Win Premier League` = sum(`Win Premier League`),
+              Placement = list(Freq))
 
 # Left join with Power Rankings DF
 power_rankings_df <- left_join(power_rankings_df, league_table3, by = "Team")
@@ -393,8 +395,8 @@ server <- function(input, output) {
                   columnGroups = list(
                       colGroup(name = "Average of 10,000x simulations", 
                                columns = c("Points", "Goal Differential","Average Finish")),
-                      colGroup(name = "Chance of...", 
-                               columns = c("UCL", "Relegation","Win Premier League"))
+                      colGroup(name = "End-of-Season Probabilities", 
+                               columns = c("UCL", "Relegation","Win Premier League", "Placement"))
                   ),
                   showSortIcon = TRUE,
                   searchable = TRUE,
@@ -434,6 +436,9 @@ server <- function(input, output) {
                                                         palette = "ggsci::amber_material"
                                                     )),
                                                     format =  colFormat(digits = 2)),
+                      Placement = colDef(cell = function(values) {
+                          sparkline(values, type = "bar", barColor = "#BF5700", chartRangeMin = 0, chartRangeMax = 1)
+                      }),
                       
                       ### add logos using embed_img()
                       logo = colDef(
