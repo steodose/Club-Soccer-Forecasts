@@ -33,6 +33,13 @@
       "Repository": "CRAN",
       "Hash": "030aaec5bc6553f35347cbb1e70b1a17"
     },
+    "DT": {
+      "Package": "DT",
+      "Version": "0.20",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "0163cd2ce6c7995005a0fc363d570963"
+    },
     "KernSmooth": {
       "Package": "KernSmooth",
       "Version": "2.23-16",
@@ -270,6 +277,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "e75525c55c70e5f4f78c9960a4b402e9"
+    },
+    "crosstalk": {
+      "Package": "crosstalk",
+      "Version": "1.2.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "6aa54f69598c32177e920eb3402e8293"
     },
     "curl": {
       "Package": "curl",
@@ -696,6 +710,13 @@
       "Repository": "CRAN",
       "Hash": "848f8c593fd1050371042d18d152e3d7"
     },
+    "lazyeval": {
+      "Package": "lazyeval",
+      "Version": "0.2.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "d908914ae53b04d4c0c0fd72ecc35370"
+    },
     "lifecycle": {
       "Package": "lifecycle",
       "Version": "1.0.1",
@@ -1115,6 +1136,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "947e4e02a79effa5d512473e10f41797"
+    },
+    "sparkline": {
+      "Package": "sparkline",
+      "Version": "2.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "06e5e4017ecb00fd142bada4b380c59a"
     },
     "spatial": {
       "Package": "spatial",
