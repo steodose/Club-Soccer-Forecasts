@@ -13,6 +13,7 @@ library(gtExtras)
 library(extrafont) #for adding in new fonts for R graphics
 library(ggtext)
 library(RCurl)
+library(curl)
 library(magick)
 library(ggimage) #for working with team logos
 library(webshot) #saving high quality images of gt tables
@@ -23,6 +24,7 @@ library(htmltools)
 library(ggridges)
 library(ggsci) #for positional heatmap
 library(sparkline) #for positional barplot in reactable standings table
+library(DT)
 
 ##### Load datasets #####
 
@@ -126,8 +128,20 @@ gt_theme_538 <- function(data,...) {
         ) 
 }
 
+
+# Custom ggplot theme (inspired by Owen Phillips at the F5 substack blog)
+theme_custom <- function () { 
+    theme_minimal(base_size=12, base_family="Chivo") %+replace% 
+        theme(
+            panel.grid.minor = element_blank(),
+            plot.background = element_rect(fill = 'white', color = "white")
+        )
+}
+
 # Define color palette to use in tables
 my_color_pal <- c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab")
+
+temppal <- c("#36a1d6", "#76b8de", "#a0bfd9", "#ffffff", "#d88359", "#d65440", "#c62c34")
 
 # Initialize EPL team colors (using this method for 2021-22)
 epl_colors <- team_mapping %>% 
@@ -160,7 +174,7 @@ points_forecast <- ggplot(simulations, aes(x = Pts, y = fct_reorder(Team, Pts), 
     scale_fill_manual(values = epl_colors$Primary)
 
 
-## 2. Probability by position table
+## 2. Probabilities by position table
 league_table <- table(simulations$Team, simulations$Rank)/iSim
 
 league_table2 <- as.data.frame(league_table) %>% # Convert table to data frame
@@ -169,20 +183,94 @@ league_table2 <- as.data.frame(league_table) %>% # Convert table to data frame
 
 league_table2$Freq <- round(league_table2$Freq, 2)
 
-position_heatmap <- ggplot(league_table2, aes(x = Placement, y = reorder(Team, Freq, max))) + 
-    geom_tile(aes(fill = Freq), colour = "white") + 
-    scale_fill_material("deep-orange") +
-    labs(x = "", y = "",
-         title = glue("2021-22 Premier League Forecasts"),
-         subtitle = glue("Chances (%) of particuar league finishes after simulating the remainder of the season 10,000x. Thru matches as of {update_date}."),
-         caption = "Data: football-data.co.uk") +
-    scale_x_discrete(position = "top") +
-    theme(legend.position = "none") +
-    theme(plot.title = element_text(face="bold"), text = element_text(family = "Chivo")) +
-    geom_text(aes(label = Freq))
+league_table3 <- league_table2 %>% 
+    pivot_wider(names_from = Placement,
+                values_from = Freq)
 
 
-## 3. Power rankings Reactable Table
+# Create datatable heatmap with DT (not using now)
+position_heatmap2 <- datatable(league_table3,
+          options = list(paging = FALSE,
+                         searching = F,
+                         pageLength = 20)) %>%
+    formatPercentage(columns = 2:21, 1) %>% 
+    formatStyle(names(league_table3), 
+                backgroundColor = styleInterval(seq(0, 1, 0.01), heat.colors(102)[102:1]))
+
+
+# Try gt for the heatmap
+league_table3 <- league_table3 %>% 
+    mutate(Rank = row_number()) %>% 
+    relocate(Rank)
+
+league_table_gt <- left_join(league_table3, team_mapping, by = c("Team" = "team"))
+
+league_table_gt2 <- league_table_gt %>% 
+    mutate(Rank = row_number()) %>% 
+    relocate(Rank) %>% 
+    select(Rank, url_logo_espn, 2:22) %>% 
+    rename(logo = url_logo_espn)
+
+# put in rank order
+league_table_gt3 <- league_table_gt2[
+    with(league_table_gt2, order(-`1`, -`2`, -`3`, -`4`, -`5`, -`6`, -`7`, -`8`, -`9`, -`10`,-`11`, -`12`, -`13`, -`14`, -`15`, -`16`, -`17`, -`18`, -`19`, -`20`)),] %>% 
+    mutate(Rank = row_number())
+
+#make gt table
+gt_sims <- league_table_gt3 %>% 
+    gt() %>% 
+    cols_label(Rank = "",
+               logo = "",
+               Team = "") %>% 
+    tab_header(
+        title = md("**Premier League Simulations**"), 
+        subtitle = paste0("2021-22 Season | Updated ", format(Sys.Date(), format="%B %d, %Y"))
+    )  %>% 
+    text_transform(
+        locations = cells_body(vars(logo)),
+        fn = function(x) {
+            web_image(url = x, 
+                      height = px(30)) 
+        }
+    ) %>%
+    fmt_percent(
+        columns = vars(`1`:`20`),
+        decimals = 1
+    )  %>%
+    data_color(
+        columns = vars(`1`:`20`),
+        colors = scales::col_numeric(
+            palette = paletteer::paletteer_d(
+                palette = "ggsci::amber_material",
+                direction  = 1
+            ) %>% as.character(),
+            domain = c(0, 1), 
+            na.color = "#00441BFF"
+        )
+    ) %>%
+    tab_options(
+        column_labels.background.color = "white",
+        table.border.top.width = px(3),
+        table.border.top.color = "white",
+        table.border.bottom.color = "white",
+        table.border.bottom.width = px(3),
+        column_labels.border.top.width = px(3),
+        column_labels.border.top.color = "white",
+        column_labels.border.bottom.width = px(3),
+        column_labels.border.bottom.color = "black",
+        data_row.padding = px(3),
+        source_notes.font.size = 12,
+        table.font.size = 16,
+        heading.align = "left"
+    )  %>%
+    tab_source_note(
+        source_note = md("Table: @steodosescu | Data: football-data.co.uk")
+    )
+
+
+
+
+## 3. Power rankings Reactable Table 
 power_rankings_df <- simulations %>% 
     group_by(Team) %>% 
     summarise(Points = mean(Pts),
@@ -217,7 +305,10 @@ team_mapping <- team_mapping %>%
 power_rankings_df <- left_join(power_rankings_df, team_mapping, by = "Team")
 
 power_rankings_df <- power_rankings_df %>% 
-    relocate(logo)
+    mutate(`Goal Diff/90` = `Goal Differential`/38,
+           Rank = row_number()) %>% 
+    relocate(Rank, logo) %>% 
+    select(Rank:Points, `Average Finish`, `Goal Differential`, `Goal Diff/90`, UCL:Placement)
 
 
 ## 4.  Current league table
@@ -301,6 +392,24 @@ summary_table_gt <- results_summary_table3 %>%
         style = cell_borders(sides = "bottom", color = "black", weight = px(1)),
         locations = cells_body(rows = 17)
     ) %>%
+    tab_style(
+        style = list(
+            cell_text(color = "red")
+        ),
+        locations = cells_body(
+            columns = vars(GD),
+            rows = GD <= 0
+        )
+    ) %>%
+    tab_style(
+        style = list(
+            cell_text(color = "blue")
+        ),
+        locations = cells_body(
+            columns = vars(GD),
+            rows = GD > 0
+        )
+    ) %>%
     cols_align(align = "left",
                columns = 1) %>%
     tab_header(title = md("**2021-22 Premier League Table**"),
@@ -312,6 +421,28 @@ summary_table_gt <- results_summary_table3 %>%
                      labels = c("  WINS  ", "  DRAWS  ", "  LOSSES  "),
                      palette= c("#ff4343", "#bfbfbf", "#0a1c2b"))
     
+
+
+## 5. GS vs GC plot
+
+#Set aspect ratio for logo based plots
+asp_ratio <- 1.618
+
+goal_differential_plot <- results_summary_table2 %>% 
+    ggplot(aes(x = GS, y = GC)) + 
+    geom_image(aes(image = logo), size = 0.055, by = "width", asp = asp_ratio) +
+    geom_hline(yintercept = mean(results_summary_table2$GC), color = "red", linetype = "dashed") +
+    geom_vline(xintercept =  mean(results_summary_table2$GC), color = "red", linetype = "dashed") +
+    theme_custom() +
+    labs(x = "Goals Scored",
+         y = "Goals Conceded",
+         caption = "Data: www.football-data.co.uk | Plot: @steodosescu",
+         title = glue("2021-22 Premier League Scoring Profiles"),
+         subtitle = glue("Matches thru **{update_date}**.")) +
+    theme(plot.title = element_text(face="bold")) +
+    theme(plot.subtitle = element_markdown()) +
+    scale_y_reverse()
+
 
 # _________________________________________________________________________________________________
 ##### Define UI for application #####
@@ -330,23 +461,35 @@ ui <- tags$head(
                         screenshotButton(id = "table_forecasts")
                ),
                
-               # Second tab
+               ### Second tab
                tabPanel("Standings", icon = icon("signal"),
+                        sidebarLayout(position = "left",
+                                      sidebarPanel(tags$h3("Stats & Standings"),
+                                                 
+                                                   "Current Premier League standings and stats. Data is refreshed after each Matchday via www.football-data.co.uk.",
+                                                   
+                                                   br()
+                                      ),
+                                      mainPanel(
                         h1("Current League Standings"),
-                        gt_output("actuals_table")),
+                        gt_output("actuals_table"),
+                        plotOutput("goal_diff_plot", width = "100%", height = "600px")
+                                      )
+                        ),
+               ),
                
-               
-               # Third tab
+               ### Third tab
                tabPanel("Results", icon = icon("futbol"),
                         h1("Match Results"),
                         glue("All data courtesy of www.football-data.co.uk. Matches thru: {update_date}"),
                         reactableOutput("table_results")
                ),
                
-               # Fourth tab
+               ### Fourth tab
                tabPanel("Forecasts",icon = icon("poll"),
                         h1("Premier League Projections"),
                         "The below shows every Premier League team's chances at particular league finishes and distribution of expected points, according to our model.",
+                        
                         br(),
                         br(),
                         sidebarPanel(
@@ -356,13 +499,14 @@ ui <- tags$head(
                                            selected="Man City", multiple = FALSE),
                             width = 4),
                         
-                        mainPanel(withSpinner(plotOutput("classification_plot")), 
-                                  plotOutput("points_plot", width = "100%"),
-                                  plotOutput("position_plot", width = "100%"), 
+                        mainPanel(withSpinner(plotOutput("classification_plot", height = "500px")),
+                                  gt_output("table_sims"),
+                                  #plotOutput("position_plot", width = "100%", height = "500px"),
+                                  plotOutput("points_plot", width = "100%", height = "500px"),
                                   width = 8),
                ),
                
-               # About info tab
+               ### About tab
                tabPanel("About", icon = icon("info-circle"),
                         fluidRow(
                             column(8,
@@ -385,7 +529,7 @@ ui <- tags$head(
 
 
 # _________________________________________________________________________________________________
-##### Define SERVER logic required #####
+##### Define SERVER logic #####
 server <- function(input, output) {
     
     # Reactable forecasts table
@@ -394,7 +538,7 @@ server <- function(input, output) {
                   theme = theme_538,
                   columnGroups = list(
                       colGroup(name = "Average of 10,000x simulations", 
-                               columns = c("Points", "Goal Differential","Average Finish")),
+                               columns = c("Points", "Average Finish", "Goal Differential", "Goal Diff/90")),
                       colGroup(name = "End-of-Season Probabilities", 
                                columns = c("UCL", "Relegation","Win Premier League", "Placement"))
                   ),
@@ -414,28 +558,31 @@ server <- function(input, output) {
                       `Goal Differential` = colDef(name = "Proj. Goal Diff",
                                                    align = "right",
                                                    format =  colFormat(digits = 0)),
+                      `Goal Diff/90` = colDef(name = "Proj. GD/90",
+                                                   align = "right",
+                                              style = list(borderRight = "2px solid #555"),
+                                              format =  colFormat(digits = 1)),
                       `Average Finish` = colDef(name = "Proj. Finish",
                                                 align = "right",
-                                                style = list(borderRight = "2px solid #555"),
                                                 format =  colFormat(digits = 1)),
                       `UCL` = colDef(name = "UCL (%)",
                                      align = "right",
                                      style = color_scales(power_rankings_df, colors = paletteer::paletteer_d(
                                          palette = "ggsci::amber_material"
                                      )),
-                                     format =  colFormat(digits = 2)),
+                                     format =  colFormat(percent = TRUE)),
                       `Relegation` = colDef(name = "Relegation (%)",
                                             align = "right",
                                             style = color_scales(power_rankings_df, colors = paletteer::paletteer_d(
                                                 palette = "ggsci::amber_material"
                                             )),
-                                            format =  colFormat(digits = 2)),
+                                            format =  colFormat(percent = TRUE)),
                       `Win Premier League` = colDef(name = "Win PL (%)",
                                                     align = "right",
                                                     style = color_scales(power_rankings_df, paletteer::paletteer_d(
                                                         palette = "ggsci::amber_material"
                                                     )),
-                                                    format =  colFormat(digits = 2)),
+                                                    format =  colFormat(percent = TRUE)),
                       Placement = colDef(cell = function(values) {
                           sparkline(values, type = "bar", barColor = "#BF5700", chartRangeMin = 0, chartRangeMax = 1)
                       }),
@@ -455,6 +602,7 @@ server <- function(input, output) {
                   defaultColDef = colDef(align = "center", minWidth = 95)
                   )
     })
+    
     
     # Reactable summary of results table
     
@@ -535,13 +683,19 @@ server <- function(input, output) {
             add_source("Data: www.football-data.co.uk", font_size = 12)
     })
     
-    # Current standing gt table
+    # Current standings gt table
     output$actuals_table <-
         render_gt(
             expr = summary_table_gt,
-            height = px(700),
+            height = px(900),
             width = px(900)
         )
+    
+    # Goals Scored vs Goals Conceded plot
+    
+    output$goal_diff_plot <- renderPlot({
+        plot(goal_differential_plot)
+    })
     
     # ggridges points plot
     output$points_plot <- renderPlot({
@@ -549,10 +703,11 @@ server <- function(input, output) {
     })
     
     
-    # Heatmap position plot
-    output$position_plot <- renderPlot({
-        plot(position_heatmap)
-    })
+    # Heatmap position plot using DT
+    output$table_sims <-
+        render_gt(
+            expr = gt_sims
+        )
     
     # Classification bar plot reactive
     d <- reactive({
