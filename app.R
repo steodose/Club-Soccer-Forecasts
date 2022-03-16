@@ -8,6 +8,7 @@ library(shinyscreenshot)
 
 library(tidyverse)
 library(teamcolors)
+library(worldfootballR)
 library(gt) #for 538-themed tables
 library(gtExtras)
 library(extrafont) #for adding in new fonts for R graphics
@@ -25,19 +26,26 @@ library(ggridges)
 library(ggsci) #for positional heatmap
 library(sparkline) #for positional barplot in reactable standings table
 library(DT)
+library(scales)
+library(ggrepel)
+library(prismatic)
 
 ##### Load datasets #####
 
 # Load 2020-21 Premier League Game Data from football-data.uk.com
-df <- read.csv("http://www.football-data.co.uk/mmz4281/2122/E0.csv", 
+df <- read.csv("https://www.football-data.co.uk/mmz4281/2122/E0.csv", 
                stringsAsFactors = FALSE)
 
 # Simulation results output from Sims script (outputted using GitHub actions)
 simulations <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/simulations.csv' %>% 
     read_csv()
 
+# Expected goals data from FBref (StatsBomb) via worldfootballR
+dat_2022 <- get_match_results(country = "ENG", gender = "M", season_end_year = 2022, tier = "1st") #not working for 2022 for some reason
+
 # Load team mappings
-team_mapping <- read_csv("team_mapping.csv")
+team_mapping <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/team_mapping.csv' %>% 
+    read_csv()
 
 
 ##### Data Pre-processing #####
@@ -423,7 +431,7 @@ summary_table_gt <- results_summary_table3 %>%
     
 
 
-## 5. GS vs GC plot
+## 5a. GS vs GC plot
 
 #Set aspect ratio for logo based plots
 asp_ratio <- 1.618
@@ -442,6 +450,88 @@ goal_differential_plot <- results_summary_table2 %>%
     theme(plot.title = element_text(face="bold")) +
     theme(plot.subtitle = element_markdown()) +
     scale_y_reverse()
+
+
+## 5b. Goal Differential Bar Plot
+results_summary_table4 <- left_join(results_summary_table3, epl_colors, by = c("Squad" = "team"))
+    
+
+goal_differential_barplot <- results_summary_table4 %>% 
+    ggplot(aes(x = fct_reorder(Squad, -GD), y = GD)) +
+    geom_col(aes(fill = Primary, 
+            color = after_scale(clr_darken(fill, 0.3))
+        ),
+        width = 0.4, 
+        alpha = .75,
+    ) + 
+    scale_color_identity(aesthetics =  c("fill"))  +
+    geom_image(
+        aes(
+            image = logo                                  
+        ), 
+        size = 0.035, 
+        by = "width", 
+        asp = asp_ratio
+    ) +
+    geom_hline(yintercept = 0, color = "black", size = 1) +
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+    theme_custom() + 
+    theme(axis.text.x = element_blank(), 
+          panel.grid.major.x = element_blank(),
+          plot.title = element_text(face = 'bold', size = 16), 
+          plot.title.position = 'plot') + 
+    labs(x = "", 
+         y = "Goal Differential", 
+         caption = "Data: www.football-data.co.uk | Plot: @steodosescu",
+         title = glue("2021-22 Premier League Goal Differential"),
+         subtitle = glue("Matches thru **{update_date}**.")) +
+    theme(plot.title = element_text(face="bold")) +
+    theme(plot.subtitle = element_markdown())
+
+
+## 6. xG Trend over time (using worldfootballR)
+
+df1 <- dat_2022
+df1 <- df1[, c("Date","Home", "Home_xG")]
+df1 <- df1 %>%
+    rename(xG = Home_xG) %>%
+    rename(Team = Home)
+
+df2 <- dat_2022
+df2 <- df2[, c("Date","Away", "Away_xG")]
+df2 <- df2 %>%
+    rename(xG = Away_xG) %>%
+    rename(Team = Away)
+
+df_fbref <- rbind(df1, df2)
+
+df3 <- dat_2022
+df3 <- df3[, c("Date","Away", "Away_xG")]
+df3 <- df3 %>%
+    rename(xGA = Away_xG) %>%
+    rename(Team = Away)
+
+df4 <- dat_2022
+df4 <- df4[, c("Date","Home", "Home_xG")]
+df4 <- df4 %>%
+    rename(xGA = Home_xG) %>%
+    rename(Team = Home)
+
+dfa_fbref <- rbind(df3, df4)
+dfa_fbref <- dfa_fbref[, 3]
+
+data_fbref <- cbind(df_fbref, dfa_fbref)
+data_fbref <- data_fbref %>%
+    rename(xGA = dfa_fbref) %>% 
+    mutate(xGD = (xG - xGA))
+
+#join team colors
+team_mapping2 <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/team_mapping.csv' %>% 
+    read_csv()
+
+data_fbref <- left_join(data_fbref, team_mapping2, by = c("Team" = "squad_fbref"))
+
+
 
 
 # _________________________________________________________________________________________________
@@ -466,13 +556,19 @@ ui <- tags$head(
                         sidebarLayout(position = "left",
                                       sidebarPanel(tags$h3("Stats & Standings"),
                                                  
-                                                   "Current Premier League standings and stats. Data is refreshed after each Matchday via www.football-data.co.uk.",
+                                                   "Current Premier League standings and stats. Data is refreshed after each Matchday via www.football-data.co.uk.
+                                                   xG (or expected goals) is the probability that a shot will result in a goal based on the characteristics of that shot and the events leading up to it. Some of these characteristics include location of the shooter, the body part the ball came off of, the type of pass, and the type of attack.",
                                                    
-                                                   br()
+                                                   br(),
+                                                   selectizeInput("squadInput", "Team",
+                                                                  choices = unique(data_fbref$Team),  
+                                                                  selected="Manchester City", multiple = TRUE),
                                       ),
                                       mainPanel(
                         h1("Current League Standings"),
                         gt_output("actuals_table"),
+                        plotOutput("xG_plot", width = "100%", height = "500px"),
+                        plotOutput("goal_diff_barplot", width = "100%", height = "600px"),
                         plotOutput("goal_diff_plot", width = "100%", height = "600px")
                                       )
                         ),
@@ -691,8 +787,12 @@ server <- function(input, output) {
             width = px(900)
         )
     
-    # Goals Scored vs Goals Conceded plot
+    # Goal Differential barplot
+    output$goal_diff_barplot <- renderPlot({
+        plot(goal_differential_barplot)
+    })
     
+    # Goals Scored vs Goals Conceded plot
     output$goal_diff_plot <- renderPlot({
         plot(goal_differential_plot)
     })
@@ -703,7 +803,7 @@ server <- function(input, output) {
     })
     
     
-    # Heatmap position plot using DT
+    # Heatmap position plot using gt
     output$table_sims <-
         render_gt(
             expr = gt_sims
@@ -731,6 +831,32 @@ server <- function(input, output) {
             theme(plot.title = element_text(face = "bold")) +
             theme(plot.subtitle = element_markdown()) +
             theme(legend.position = "none")
+        
+    })
+    
+    # Expected Goals line plot reactive
+    g <- reactive({
+        data_fbref %>%
+            filter(Team == input$squadInput)   
+        
+    }) 
+    
+    #Render Expected Goals line plot
+    output$xG_plot <- renderPlot({
+        
+        ggplot(g(), aes(x=Date, y = xGD, color = Team, group = Team)) +
+            geom_line(size = 1.2, show.legend = FALSE) +
+            labs(x = "", y = "xG Differential Trend",
+                 title = "Premier League Expected Goals, 2021-22",
+                 subtitle = glue("Match-by-match expected goal differential. Data thru..."),
+                 caption = "Data: StatsBomb (via FBRef.com)\nGraphic: @steodosescu",
+                 color = "") +
+            geom_label_repel(data = g(), show.legend = FALSE, 
+                             aes(x = Date, y = xGD, label = xGD)) +
+            theme_custom() +
+            scale_color_manual(values = data_fbref$color_pri) +
+            theme(plot.title = element_text(face="bold")) +
+            theme(plot.subtitle = element_markdown())
         
     })
     
