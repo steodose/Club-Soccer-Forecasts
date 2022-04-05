@@ -3,7 +3,7 @@ How this works
 
 **Based on Mark Taylor's Expected Goals model and Constantinos Chappas's season simulations**
 
-The below documents a relatively simple model for forecasting Premier League results, and is based on work previously done by [Mark Taylor](http://thepowerofgoals.blogspot.com/2016/02/how-to-frame-individual-match-outcome.html) and [Constantinos Chappas](http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html). This was last updated in Matchweek 35 of the 2020-21 Premier League season. I will revisit for the 2021-22 campaign. 
+The below documents a relatively simple model for forecasting Premier League results, and is based on work previously done by [Mark Taylor](http://thepowerofgoals.blogspot.com/2016/02/how-to-frame-individual-match-outcome.html) and [Constantinos Chappas](http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html). 
 
 ***
 
