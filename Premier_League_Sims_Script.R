@@ -15,10 +15,10 @@ library(ggtext)
 ##### Building the model #####
 # Inspiration: http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html
 
-matchweek <- 9 #Enter matchweek after the week's games are finished
+matchweek <- 2 #Enter matchweek after the week's games are finished
 
-# Load 2020-21 Premier League Game Data from football-data.com
-df <- read.csv("http://www.football-data.co.uk/mmz4281/2122/E0.csv", 
+# Load Premier League Game Data from football-data.com
+df <- read.csv("https://www.football-data.co.uk/mmz4281/2223/E0.csv", 
                stringsAsFactors = FALSE)
 
 sMatch <- paste(df$HomeTeam, df$AwayTeam, sep = " - ")
