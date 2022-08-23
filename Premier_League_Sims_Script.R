@@ -7,7 +7,6 @@ library(tidyverse)
 ##### Building the model #####
 # Inspiration: http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html
 
-matchweek <- 2 #Enter matchweek after the week's games are finished
 
 # Load Premier League Game Data from football-data.com
 df <- read.csv("https://www.football-data.co.uk/mmz4281/2223/E0.csv", 
