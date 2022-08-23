@@ -3,14 +3,6 @@
 
 ##### Load libraries #####
 library(tidyverse)
-library(ggridges)
-library(teamcolors)
-library(forcats)
-library(gt) #for 538-themed tables
-library(extrafont) #for adding in new fonts
-library(rvest) #for web scraping
-library(ggtext)
-
 
 ##### Building the model #####
 # Inspiration: http://rstudio-pubs-static.s3.amazonaws.com/149923_584734fddffe40799cee564c938948d7.html
