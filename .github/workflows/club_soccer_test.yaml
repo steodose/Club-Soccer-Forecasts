@@ -32,7 +32,7 @@ jobs:
         run: |
           Rscript "Premier_League_Sims_Script.R"
         
-        - name: Commit files # Commit changes
+      - name: Commit files # Commit changes
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
