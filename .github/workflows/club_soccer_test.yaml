@@ -7,7 +7,7 @@ name: scripts
 
 jobs:
   run-r-script:
-    runs-on: ubuntu-latest # use Ubuntu
+    runs-on: MacOS # use MacOS to get around the libCurl issues
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }} 
     steps:
