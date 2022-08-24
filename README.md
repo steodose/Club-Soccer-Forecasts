@@ -1,6 +1,6 @@
-# Club-Soccer-Forecasts
-
 [![update-sims](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer_test.yaml/badge.svg)](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer_test.yaml)
+
+# Club-Soccer-Forecasts
 
 Repo for my club soccer season simulations
 
