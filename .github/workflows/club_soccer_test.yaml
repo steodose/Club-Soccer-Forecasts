@@ -23,7 +23,7 @@ jobs:
         run: Rscript -e 'install.packages(c("tidyverse"))'
       - name: Run sims script
         run: |
-          source('Premier-League-Sims-Script.R')
+          source('Premier_League_Sims_Script.R')
         shell: Rscript {0}
       - name: Commit results
         run: |
