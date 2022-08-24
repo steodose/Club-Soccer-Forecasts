@@ -1,4 +1,7 @@
 # Club-Soccer-Forecasts
+
+[![update-sims](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer_test.yaml/badge.svg)](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer_test.yaml)
+
 Repo for my club soccer season simulations
 
 **Based on Mark Taylor's Expected Goals model and Constantinos Chappas's season simulations**
@@ -59,7 +62,7 @@ Data
 
 The data come from [football-data.co.uk](http://www.football-data.co.uk/), and is refreshed after all the games have been completed for the week, usually on Mondays.
 
-[![update-data](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer.yaml/badge.svg)](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer.yaml)
+[![update-sims](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer_test.yaml/badge.svg)](https://github.com/steodose/Club-Soccer-Forecasts/actions/workflows/club_soccer_test.yaml)
 
 Learn More
 ------------
