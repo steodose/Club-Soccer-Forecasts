@@ -5,6 +5,8 @@ library(shiny)
 library(shinythemes)
 library(shinycssloaders)
 library(shinyscreenshot)
+library(shinyuieditor)
+library(gridlayout)
 
 library(tidyverse)
 library(teamcolors)
@@ -30,6 +32,13 @@ library(scales)
 library(ggrepel)
 library(prismatic)
 library(svglite)
+library(Cairo)
+library(ragg)
+library(ggchicklet) #for stylized bar charts
+
+options(shiny.usecairo = TRUE)
+
+#options(use.ragg = TRUE)
 
 ##### Load datasets #####
 
@@ -37,8 +46,8 @@ library(svglite)
 df <- read.csv("https://www.football-data.co.uk/mmz4281/2223/E0.csv", 
                stringsAsFactors = FALSE)
 
-# Simulation results output from Sims script (outputted using GitHub actions)
-simulations <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/simulations.csv' %>% 
+# Simulation results output from Sims script (update to output using GitHub actions when get it working)
+simulations <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/data/simulations.csv' %>% 
     read_csv()
 
 # Expected goals data from FBref (StatsBomb) via worldfootballR
@@ -53,19 +62,19 @@ team_mapping <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecast
 
 # Fetch current date for updating visualizations
 update_date <- max(df$Date) %>% 
-    format(format="%B %d")
+    format.Date(format ="%b. %d")
 
 iSim <- 10000 #Define iSim from sims script
 
 # Load font from google fonts
-htmltools::tags$link(href = "https://fonts.googleapis.com/css?family=Chivo:400,600,700&display=swap", rel = "stylesheet")
+htmltools::tags$link(href = "https://fonts.googleapis.com/css?family=Outfit:400,600,700&display=swap", rel = "stylesheet")
 
 # Define 538 table theme for Reactable table(s) below
 theme_538 <- function() {
     reactable::reactableTheme(
         searchInputStyle = list(width = "31%", backgroundColor = "#F9F9F9"),
         style = list(
-            fontFamily = "Chivo"
+            fontFamily = "Outfit"
         ),
         headerStyle = list(
             "&:hover[aria-sort]" = list(
@@ -103,7 +112,7 @@ gt_theme_538 <- function(data,...) {
         opt_all_caps()  %>%
         opt_table_font(
             font = list(
-                google_font("Chivo"),
+                google_font("Outfit"),
                 default_fonts()
             )
         ) %>%
@@ -139,19 +148,20 @@ gt_theme_538 <- function(data,...) {
 
 # Custom ggplot theme (inspired by Owen Phillips at the F5 substack blog)
 theme_custom <- function () { 
-    theme_minimal(base_size=12, base_family="Chivo") %+replace% 
+    theme_minimal(base_size=12, base_family="Outfit") %+replace% 
         theme(
             panel.grid.minor = element_blank(),
             plot.background = element_rect(fill = 'white', color = "white")
         )
 }
 
+
 # Define color palette to use in tables
 my_color_pal <- c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab")
 
 temppal <- c("#36a1d6", "#76b8de", "#a0bfd9", "#ffffff", "#d88359", "#d65440", "#c62c34")
 
-# Initialize EPL team colors (using this method for 2021-22)
+# Initialize EPL team colors (using this method for 2022-23)
 epl_colors <- team_mapping %>% 
     select(team, color_pri) %>% 
     rename(Primary = color_pri)
@@ -164,6 +174,11 @@ df_results_table <- df %>%
     #mutate('logo_away' = paste0('logos/', Away, '.png')) %>%
     select(Date, Time, HomeTeam, AwayTeam, FTHG, FTAG, B365H_prob, B365D_prob, B365A_prob)
 
+# curate for fixtures table
+df_fixtures <- df_results_table %>%
+    select(-Time) %>%
+    str_c("FTHG", "FTAG", sep = "-")
+
 
 ##### Plots for publication in App #####
 
@@ -171,14 +186,14 @@ df_results_table <- df %>%
 points_forecast <- ggplot(simulations, aes(x = Pts, y = fct_reorder(Team, Pts), fill = Team)) +
     geom_density_ridges_gradient(show.legend = FALSE) +
     labs(x = "Points", y = "",
-         title = glue("2021-22 Premier League: Thru matches as of {update_date}."),
+         title = glue("2022-23 Premier League: Thru matches as of {update_date}."),
          subtitle = "Distribution of expected points after simulating the remainder of the season 10,000x",
          caption = "Data: football-data.co.uk"
     ) +
     theme_bw() +
     scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +
     theme(plot.title = element_text(face="bold")) +
-    theme(plot.title = element_text(face="bold"), text = element_text(family = "Chivo")) +
+    theme(plot.title = element_text(face="bold"), text = element_text(family = "Outfit")) +
     scale_fill_manual(values = epl_colors$Primary)
 
 
@@ -194,6 +209,14 @@ league_table2$Freq <- round(league_table2$Freq, 2)
 league_table3 <- league_table2 %>% 
     pivot_wider(names_from = Placement,
                 values_from = Freq)
+
+
+## create color palette to be used in bar plot based on input data
+chicklets_pal <- c(
+    "gray85",
+    rep("gray70", length(league_table2$Freq) - 19), 
+    "#ff0078"
+)
 
 
 # Create datatable heatmap with DT (not using now)
@@ -427,7 +450,7 @@ summary_table_gt <- results_summary_table3 %>%
     ) %>%
     cols_align(align = "left",
                columns = 1) %>%
-    tab_header(title = md("**2021-22 Premier League Table**"),
+    tab_header(title = md("**2022-23 Premier League Table**"),
                subtitle = glue("Thru matches played as of {update_date}.")) %>%
     tab_source_note(
         source_note = md("DATA: www.football-data.co.uk")) %>% 
@@ -452,7 +475,7 @@ goal_differential_plot <- results_summary_table2 %>%
     labs(x = "Goals Scored",
          y = "Goals Conceded",
          caption = "Data: www.football-data.co.uk | Plot: @steodosescu",
-         title = glue("2021-22 Premier League Scoring Profiles"),
+         title = glue("2022-23 Premier League Scoring Profiles"),
          subtitle = glue("Matches thru **{update_date}**.")) +
     theme(plot.title = element_text(face="bold")) +
     theme(plot.subtitle = element_markdown()) +
@@ -490,7 +513,7 @@ goal_differential_barplot <- results_summary_table4 %>%
     labs(x = "", 
          y = "Goal Differential", 
          caption = "Data: www.football-data.co.uk | Plot: @steodosescu",
-         title = glue("2021-22 Premier League Goal Differential"),
+         title = glue("2022-23 Premier League Goal Differential"),
          subtitle = glue("Matches thru **{update_date}**.")) +
     theme(plot.title = element_text(face="bold")) +
     theme(plot.subtitle = element_markdown())
@@ -522,8 +545,7 @@ ui <- tags$head(
                         sidebarLayout(position = "left",
                                       sidebarPanel(tags$h3("Stats & Standings"),
                                                  
-                                                   "Current Premier League standings and stats. Data is refreshed after each Matchday via www.football-data.co.uk.
-                                                   xG (or expected goals) is the probability that a shot will result in a goal based on the characteristics of that shot and the events leading up to it. Some of these characteristics include location of the shooter, the body part the ball came off of, the type of pass, and the type of attack.",
+                                                   "Current Premier League standings and stats. Data is refreshed every Monday and accessed via www.football-data.co.uk.\n Please give the app a second to load.",
                                                    
                                                    br(),
                                       ),
@@ -538,7 +560,7 @@ ui <- tags$head(
                ),
                
                ### Third tab
-               tabPanel("Results", icon = icon("futbol"),
+               tabPanel("Fixtures", icon = icon("futbol"),
                         h1("Match Results"),
                         glue("All data courtesy of www.football-data.co.uk. Matches thru: {update_date}"),
                         reactableOutput("table_results")
@@ -582,7 +604,7 @@ ui <- tags$head(
                             "Find the code on Github:", tags$a(href = "https://github.com/steodose/NHL-Odds", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
                           p("Questions? Comments? Reach out on Twitter", tags$a(href = "https://twitter.com/steodosescu", tags$i(class = 'fa fa-twitter', style = 'color:#1DA1F2'), target = '_blank'), style = "font-size: 100%"),
                           p(tags$em("Last updated: September 2021"), style = 'font-size:85%'))),
-               windowTitle = "2021-22 Premier League"
+               windowTitle = "2022-23 Premier League"
     ) #navbarPage bracket
 ) #END UI function
 
@@ -590,6 +612,9 @@ ui <- tags$head(
 # _________________________________________________________________________________________________
 ##### Define SERVER logic #####
 server <- function(input, output) {
+    
+    #options(shiny.useragg = TRUE)
+    
     
     # Reactable forecasts table
     output$table_forecasts <- renderReactable({
@@ -678,68 +703,13 @@ server <- function(input, output) {
                   language = reactableLang(
                       searchPlaceholder = "SEARCH FOR A TEAM..."),
                   defaultPageSize = 100,
-                  columns = list(
-                      `HomeTeam` = colDef(maxWidth = 120,
-                                          name = "Home",
-                                          align = "left"),
-                      `AwayTeam` = colDef(maxWidth = 120,
-                                          name = "Away",
-                                          align = "left"),
-                      `FTHG` = colDef(maxWidth = 80,
-                                      name = "Home Goals",
-                                      style = color_scales(df_results_table, colors = my_color_pal),
-                                      align = "right"),
-                      `FTAG` = colDef(maxWidth = 80,
-                                      name = "Away Goals",
-                                      style = color_scales(df_results_table, colors = my_color_pal),
-                                      align = "right"),
-                      ### add bars using data_bars 
-                      `B365H_prob` = colDef(maxWidth = 400,
-                                            align = "right",
-                                            name = "PH",
-                                            cell = data_bars(df_results_table, 
-                                                             fill_color = "dodgerblue",
-                                                             background = "lightgrey",
-                                                             fill_opacity = 0.8,
-                                                             max_value = 100,
-                                                             scales::number_format(accuracy = 0.1))),
-                      `B365D_prob` = colDef(maxWidth = 400,
-                                            align = "right",
-                                            name = "PD",
-                                            cell = data_bars(df_results_table, 
-                                                             fill_color = "dodgerblue",
-                                                             background = "lightgrey",
-                                                             fill_opacity = 0.8,
-                                                             max_value = 100,
-                                                             scales::number_format(accuracy = 0.1))),
-                      `B365A_prob` = colDef(maxWidth = 400,
-                                            align = "right",
-                                            name = "PA",
-                                            cell = data_bars(df_results_table, 
-                                                             fill_color = "dodgerblue",
-                                                             background = "lightgrey",
-                                                             fill_opacity = 0.8,
-                                                             max_value = 100,
-                                                             scales::number_format(accuracy = 0.1))),
-                      `logo_home` = colDef(cell = function(value) {
-                          image <- img(src = sprintf("logos/%s.png", value), height = "24px", alt = value)
-                          tagList(
-                              div(style = list(display = "inline-block", width = "45px"), image),
-                              value
-                          )
-                      })
-                  ),
-                  
                   pagination = TRUE,
                   compact = TRUE, 
                   borderless = FALSE, 
                   striped = FALSE,
                   fullWidth = FALSE, 
                   defaultColDef = colDef(align = "center", minWidth = 120),
-        ) %>% 
-            add_title("2021-22 Premier League Fixtures") %>% 
-            add_subtitle(glue("Data as of {update_date}"),font_size = 18) %>% 
-            add_source("Data: www.football-data.co.uk", font_size = 12)
+        )
     })
     
     # Current standings gt table
@@ -783,15 +753,18 @@ server <- function(input, output) {
     output$classification_plot <- renderPlot({
         
         ggplot(d(), aes(x = Placement, y = Freq, fill = Team)) +
-            geom_bar(position = "dodge", stat = "identity") +
-            geom_text(aes(label=Freq), position=position_dodge(width=0.9), vjust=-0.25) +
+            geom_chicklet(position = "dodge", stat = "identity", alpha = 0.6) +
+            geom_text(aes(label = percent(Freq, accuracy = 1L),
+                          vjust=-0.25)) +
+            scale_fill_manual(values = '#ff0078') +
             labs(
                 x = "Predicted League Finish", y = "Chance (%)",
-                title = "2021-22 Premier League",
+                title = "2022-23 Premier League",
                 subtitle = glue("Probabilities of particular placements in the league table. Data as of {update_date}."),
                 caption = "Data: www.football-data.co.uk\nGraphic: @steodosescu"
             ) +
-            theme(plot.title = element_text(face = "bold")) +
+            theme(plot.title = element_text(face = "bold"),
+                  axis.text.y=element_blank()) +
             theme(plot.subtitle = element_markdown()) +
             theme(legend.position = "none")
         
