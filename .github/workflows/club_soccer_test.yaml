@@ -3,7 +3,7 @@ name: update-sims
 
 on:
   schedule:
-    - cron: '00 23 * * MON,THU'
+    - cron: '00 23 * * SUN,MON,THU'
   workflow_dispatch:
 
 jobs:
