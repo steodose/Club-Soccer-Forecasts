@@ -61,8 +61,7 @@ team_mapping <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecast
 ##### Data Pre-processing #####
 
 # Fetch current date for updating visualizations
-update_date <- max(df$Date) %>% 
-    format.Date(format ="%b. %d")
+update_date <- max(df$Date)
 
 iSim <- 10000 #Define iSim from sims script
 
