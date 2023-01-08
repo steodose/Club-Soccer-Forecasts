@@ -1,6 +1,8 @@
 ##### Premier League Forecasts App #####
 ## By: Stephan Teodosescu
 
+source("global.R") #use Cairo graphics library for Shiny
+
 library(shiny)
 library(shinythemes)
 library(shinycssloaders)
@@ -36,7 +38,6 @@ library(Cairo)
 library(ragg)
 library(ggchicklet) #for stylized bar charts
 
-options(shiny.usecairo = TRUE)
 
 #options(use.ragg = TRUE)
 
@@ -45,6 +46,10 @@ options(shiny.usecairo = TRUE)
 # Load Premier League Game Data from football-data.uk.com
 df <- read.csv("https://www.football-data.co.uk/mmz4281/2223/E0.csv", 
                stringsAsFactors = FALSE)
+
+epl_matches <- read_csv("https://projects.fivethirtyeight.com/soccer-api/club/spi_matches_latest.csv") %>%
+    filter(league == 'Barclays Premier League',
+           season == 2022)
 
 # Simulation results output from Sims script (update to output using GitHub actions when get it working)
 simulations <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/data/simulations.csv' %>% 
@@ -57,11 +62,24 @@ simulations <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts
 team_mapping <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/team_mapping.csv' %>% 
     read_csv()
 
+# fix Nottingham Forest in 538 team mapping data
+team_mapping2 <- team_mapping %>%
+    mutate(team_538 = case_when(
+        team == "Nott'm Forest" ~ "Nottingham Forest",
+        TRUE ~ team_538
+    ))
 
 ##### Data Pre-processing #####
 
 # Fetch current date for updating visualizations
-update_date <- max(df$Date)
+#update_date <- max(df$Date)
+
+update_date <- epl_matches %>%
+    drop_na()
+
+update_date <- max(update_date$date)
+update_date <- format(update_date, format ="%b %d, %Y")
+
 
 iSim <- 10000 #Define iSim from sims script
 
@@ -177,6 +195,17 @@ df_results_table <- df %>%
 df_fixtures <- df_results_table %>%
     select(-Time) %>%
     str_c("FTHG", "FTAG", sep = "-")
+
+
+# Matches played results (actuals) using 538 data
+df_results_table_538 <- epl_matches %>%
+    select(date, team1, team2, score1, score2, xg1, xg2)
+
+epl_matches2 <- epl_matches %>%
+    select(date, team1, team2, score1, score2, xg1,xg2, prob1:probtie) %>%
+    left_join(team_mapping2, by = c("team1" = "team_538")) %>%
+    left_join(team_mapping2, by = c("team2" = "team_538")) %>%
+    select(date, url_logo_espn.x, team1, url_logo_espn.y, team2, score1, score2, xg1,xg2, prob1:probtie)
 
 
 ##### Plots for publication in App #####
@@ -300,7 +329,7 @@ gt_sims <- league_table_gt3 %>%
 
 
 
-## 3. Power rankings Reactable Table 
+## 3. ----------------- Power rankings Reactable Table --------------------
 power_rankings_df <- simulations %>% 
     group_by(Team) %>% 
     summarise(Points = mean(Pts),
@@ -341,7 +370,7 @@ power_rankings_df <- power_rankings_df %>%
     select(Rank:Points, `Average Finish`, `Goal Differential`, `Goal Diff/90`, UCL:Placement)
 
 
-## 4.  Current League Table
+## 4a.  ----------------- Current League Table -------------------
 home <- df_results_table %>% 
     group_by(HomeTeam) %>% 
     mutate(win = if_else(FTHG > FTAG, 1, 0),
@@ -459,44 +488,224 @@ summary_table_gt <- results_summary_table3 %>%
                      palette= c("#ff4343", "#bfbfbf", "#0a1c2b"))
     
 
+## 4b.  Current League Table (using 538 data)
+df_results_table_538 <- epl_matches %>%
+    mutate(result = score1 - score2,
+           xresult = xg1 - xg2) %>%
+    select(team1, team2, result, xresult, score1, score2, xg1, xg2) %>%
+    pivot_longer(team1:team2, names_to = "home_away", values_to = "team") %>%
+    mutate(
+        result = ifelse(home_away == "team1", result, -result),
+        xresult = ifelse(home_away == "team1", xresult, -xresult),
+        win = ifelse(result == 0, 0.5, ifelse(result > 0, 1, 0))
+    ) %>%
+    select(team, score1, score2, xg1, xg2, win, result, xresult) %>%
+    drop_na()
 
-## 5a. GS vs GC plot
+
+
+results_summary_538 <- df_results_table_538 %>%
+    group_by(team) %>%
+    summarise(
+        Wins = length(win[win == 1]),
+        Losses = length(win[win == 0]),
+        Draws = length(win[win == 0.5]),
+        MP = sum(Wins, Losses, Draws),
+        Points = (Wins * 3) + (Draws * 1),
+        win_perc = (100 * Points / (MP * 3)),
+        GD = sum(result),
+        xGD = sum(xresult),
+        form = list(win), .groups = "drop"
+    ) %>%
+    left_join(team_mapping2, by = c("team" = "team_538")) %>%
+    select(url_logo_espn, team, Points, MP, Wins, Draws, Losses, GD, xGD, win_perc, form) %>%
+    arrange(desc(Points), desc(GD)) %>%
+    ungroup() %>%
+    mutate(Rank = row_number()) %>%
+    relocate(Rank) %>%
+    rename(Team = team) %>%
+    mutate(list_data = list(c(Wins, Draws, Losses)))
+
+# reorganize list_data column for table graphic
+results_summary_538 <- results_summary_538 %>%
+    gather(attr_num, list_data, c(Wins, Draws, Losses)) %>%
+    # could use pivot_longer here
+    group_by_at(vars(-attr_num, -list_data)) %>%
+    summarise(list_data = list(list_data)) %>%
+    ungroup()
+
+# Make current standings table using gt package
+summary_table_gt_538 <- results_summary_538 %>%
+    gt() %>%
+    # Relabel columns
+    cols_label(
+        url_logo_espn = "",
+        win_perc = "Win %",
+        form = "Form"
+    ) %>%
+    text_transform(
+        locations = cells_body(vars(url_logo_espn)),
+        fn = function(x) {
+            web_image(url = x, 
+                      height = px(30)) 
+        }
+    ) %>%
+    data_color(columns = 4,
+               colors = scales::col_numeric(
+                   palette = c("white", "#3fc1c9"),
+                   domain = NULL)
+    ) %>%
+    #gt_theme_538() %>%
+    tab_style(
+        style = cell_borders(sides = "bottom", color = "black", weight = px(1)),
+        locations = cells_body(rows = 4)
+    ) %>%
+    tab_style(
+        style = cell_borders(sides = "bottom", color = "black", weight = px(1)),
+        locations = cells_body(rows = 17)
+    ) %>%
+    tab_style(
+        style = list(
+            cell_text(color = "red")
+        ),
+        locations = cells_body(
+            columns = vars(GD),
+            rows = GD <= 0
+        )
+    ) %>%
+    tab_style(
+        style = list(
+            cell_text(color = "blue")
+        ),
+        locations = cells_body(
+            columns = vars(GD),
+            rows = GD > 0
+        )
+    ) %>%
+    tab_style(
+        style = list(
+            cell_text(color = "red")
+        ),
+        locations = cells_body(
+            columns = vars(xGD),
+            rows = xGD <= 0
+        )
+    ) %>%
+    tab_style(
+        style = list(
+            cell_text(color = "blue")
+        ),
+        locations = cells_body(
+            columns = vars(xGD),
+            rows = xGD > 0
+        )
+    ) %>%
+    fmt_number(
+        columns = vars(xGD),
+        decimals = 1
+    ) %>%
+    cols_align(align = "left",
+               columns = 1) %>%
+    tab_options(column_labels.font.weight = "bold") %>%
+    tab_header(title = md("**2022-23 Premier League Table**"),
+               subtitle = glue("Thru matches played as of {update_date}.")) %>%
+    tab_source_note(
+        source_note = md("DATA: fivethirtyeight.com")) %>% 
+    gt_plt_bar_pct(column = win_perc, scaled = TRUE, fill = "navy", background = "gray") %>% 
+    gt_plt_winloss(form, max_wins = 30) %>%
+    gt_plt_bar_stack(list_data, width = 60,
+                     labels = c("  WINS  ", "  DRAWS  ", "  LOSSES  "),
+                     palette= c("#ff4343", "#bfbfbf", "#0a1c2b")) %>%
+    tab_footnote(
+        footnote = "Share of total available points captured. Win = 3 points, Draw = 1 point, Loss = 0 points.",
+        locations = cells_column_labels(vars(win_perc))
+    ) %>%
+    tab_footnote(
+        footnote = "Expected Goals (xG) is the probability a shot will result in a goal based on the characteristics of that shot. Measures  quality of chances created.",
+        locations = cells_column_labels(vars(xGD))
+    )
+ 
+## 5a. --------------------- GS vs GC plot ------------------------------------
 
 #Set aspect ratio for logo based plots
 asp_ratio <- 1.618
 
-goal_differential_plot <- results_summary_table2 %>% 
-    ggplot(aes(x = GS, y = GC)) + 
-    geom_image(aes(image = logo), size = 0.055, by = "width", asp = asp_ratio) +
-    geom_hline(yintercept = mean(results_summary_table2$GC), color = "red", linetype = "dashed") +
-    geom_vline(xintercept =  mean(results_summary_table2$GC), color = "red", linetype = "dashed") +
+epl_matches <- epl_matches |> 
+    mutate(unique_match_id = str_c(team1, team2, sep = "-"))
+
+#group matches and compute goals and points
+epl_matches_grouped <- epl_matches |> 
+    drop_na() |> #drop rows for matches that haven't occurred yet
+    group_by(date, unique_match_id, team1, team2) |> 
+    summarise(squad1_score = sum(score1, na.rm = TRUE),
+              squad2_score = sum(score2, na.rm = TRUE),
+              squad1_xg = sum(xg1, na.rm = TRUE),
+              squad2_xg = sum(xg2, na.rm = TRUE))
+
+
+# Process data frame to get one row per team-game
+epl_team_games <- epl_matches_grouped %>% 
+    # pivot the home and away values to get one row per team
+    pivot_longer(contains('team'), names_to = 'home_away', values_to = 'squad', names_prefix = 'team_') %>% 
+    # calculate the points awarded (3 for a win, 1 for a draw, 0 for a loss)
+    mutate(score = ifelse(home_away == "team1", squad1_score, squad2_score),
+           opp_score = ifelse(home_away == "team1", squad2_score, squad1_score),
+           xg = ifelse(home_away == "team1", squad1_xg, squad2_xg),
+           opp_xg = ifelse(home_away == "team1", squad2_xg, squad1_xg),
+           points = case_when(score > opp_score ~ 3,
+                              score == opp_score ~ 1,
+                              TRUE ~ 0),
+           win = ifelse(points == 3, 1, 0))
+
+#calculate team goals and points
+epl_team_stats <- epl_team_games |> 
+    group_by(squad) |> 
+    summarise(gs = sum(score),
+              gc = sum(opp_score),
+              gd = gs - gc,
+              points = sum(points),
+              xgf = sum(xg),
+              xga = sum(opp_xg),
+              xgd = xgf - xga) %>%
+left_join(team_mapping2, by = c("squad" = "team_538")) %>%
+    mutate(rank = row_number()) %>%
+    relocate(rank)
+
+# make goals plot
+goal_differential_plot <- epl_team_stats %>% 
+    ggplot(aes(x = gs, y = gc)) + 
+    geom_image(aes(image = url_logo_espn), size = 0.055, by = "width", asp = asp_ratio) +
+    geom_hline(yintercept = mean(epl_team_stats$gs), color = "red", linetype = "dashed") +
+    geom_vline(xintercept =  mean(epl_team_stats$gc), color = "red", linetype = "dashed") +
     theme_custom() +
+    theme(axis.text.x = element_blank(), 
+          panel.grid.major.x = element_blank(),
+          plot.title = element_text(face = 'bold', size = 16), 
+          plot.title.position = 'plot') + 
     labs(x = "Goals Scored",
          y = "Goals Conceded",
-         caption = "Data: www.football-data.co.uk | Plot: @steodosescu",
+         caption = "Data: fivethirtyeight.com | Plot: @steodosescu",
          title = glue("2022-23 Premier League Scoring Profiles"),
          subtitle = glue("Matches thru **{update_date}**.")) +
-    theme(plot.title = element_text(face="bold")) +
     theme(plot.subtitle = element_markdown()) +
     scale_y_reverse()
 
 
-## 5b. Goal Differential Bar Plot
-results_summary_table4 <- left_join(results_summary_table3, epl_colors, by = c("Squad" = "team"))
-    
 
-goal_differential_barplot <- results_summary_table4 %>% 
-    ggplot(aes(x = fct_reorder(Squad, -GD), y = GD)) +
-    geom_col(aes(fill = Primary, 
-            color = after_scale(clr_darken(fill, 0.3))
-        ),
-        width = 0.4, 
-        alpha = .75,
+## 5b. --------------- Goal Differential Bar Plot ------------------------
+
+goal_differential_barplot <- epl_team_stats %>% 
+    ggplot(aes(x = fct_reorder(squad, -gd), y = gd)) +
+    geom_col(aes(fill = color_pri, 
+                 color = after_scale(clr_darken(fill, 0.3))
+    ),
+    width = 0.4, 
+    alpha = .75,
     ) + 
     scale_color_identity(aesthetics =  c("fill"))  +
     geom_image(
         aes(
-            image = logo                                  
+            image = url_logo_espn                                  
         ), 
         size = 0.035, 
         by = "width", 
@@ -511,13 +720,11 @@ goal_differential_barplot <- results_summary_table4 %>%
           plot.title.position = 'plot') + 
     labs(x = "", 
          y = "Goal Differential", 
-         caption = "Data: www.football-data.co.uk | Plot: @steodosescu",
+         caption = "Data: www.fivethirtyeight.com | Plot: @steodosescu",
          title = glue("2022-23 Premier League Goal Differential"),
          subtitle = glue("Matches thru **{update_date}**.")) +
     theme(plot.title = element_text(face="bold")) +
     theme(plot.subtitle = element_markdown())
-
-
 
 
 
@@ -534,7 +741,7 @@ ui <- tags$head(
                title = tags$div(img(src="epl-logo-white.png", height=28), "2022-23 EPL"),
                tabPanel("Power Rankings", icon = icon("sort"), 
                         h1("English Premier League Power Rankings"),
-                        glue("Welcome to our EPL projections and probabilities page where you will find each squad’s projected points total, goal differential, average finish, and its probability of Champions League qualification or relegation. These odds are based on 10,000x simulations of the remainder of the current season. The data are refreshed on Mondays after the week's matches have concluded. Last updated {update_date}."),
+                        glue("Welcome to my EPL projections and probabilities page where you will find each squad’s projected points total, goal differential, average finish, and its probability of Champions League qualification or relegation. These odds are based on 10,000x simulations of the remainder of the current season. The data are refreshed on Mondays and/or Thursdays after the week's matches have concluded. Last updated {update_date}."),
                         reactableOutput("table_forecasts"),
                         screenshotButton(id = "table_forecasts")
                ),
@@ -544,7 +751,7 @@ ui <- tags$head(
                         sidebarLayout(position = "left",
                                       sidebarPanel(tags$h3("Stats & Standings"),
                                                  
-                                                   "Current Premier League standings and stats. Data is refreshed every Monday and accessed via www.football-data.co.uk.\n Please give the app a second to load.",
+                                                   "Current Premier League standings and stats. Data is refreshed every Monday and/or Thursday, and accessed via fivethirtyeight.com.\n Please give the app a second to load.",
                                                    
                                                    br(),
                                       ),
@@ -561,7 +768,7 @@ ui <- tags$head(
                ### Third tab
                tabPanel("Fixtures", icon = icon("futbol"),
                         h1("Match Results"),
-                        glue("All data courtesy of www.football-data.co.uk. Matches thru: {update_date}"),
+                        glue("All data courtesy of www.fivethirtyeight.com. Matches thru: {update_date}"),
                         reactableOutput("table_results")
                ),
                
@@ -612,7 +819,7 @@ ui <- tags$head(
 ##### Define SERVER logic #####
 server <- function(input, output) {
     
-    #options(shiny.useragg = TRUE)
+    #options(shiny.usecairo = TRUE)
     
     
     # Reactable forecasts table
@@ -690,18 +897,65 @@ server <- function(input, output) {
     # Reactable summary of results table
     
     output$table_results <- renderReactable({
-        reactable(df_results_table,
+        reactable(epl_matches2,
                   theme = theme_538,
                   ### add column group header
                   columnGroups = list(
-                      colGroup(name = "Bet365 Pre-Match Odds (%)", 
-                               columns = c("B365H_prob","B365D_prob","B365A_prob"))
+                      colGroup(name = "538 Pre-Match Odds (%)", 
+                               columns = c("prob1","prob2","probtie")),
+                      colGroup(name = "Expected Goals", 
+                               columns = c("xg1","xg2"))
                   ),
                   showSortIcon = TRUE,
                   searchable = TRUE,
                   language = reactableLang(
                       searchPlaceholder = "SEARCH FOR A TEAM..."),
                   defaultPageSize = 100,
+                  columns = list(
+                      team1 = colDef(name = "Home",
+                                    minWidth = 140,
+                                    align = "left"),
+                      team2 = colDef(name = "Away",
+                                     minWidth = 140,
+                                      align = "right",
+                                      format =  colFormat(digits = 0)),
+                      score1 = colDef(name = "Home Score",
+                                                   align = "right",
+                                                   format =  colFormat(digits = 0)),
+                      score2 = colDef(name = "Away Score",
+                                              align = "right",
+                                              style = list(borderRight = "2px solid #555"),
+                                              format =  colFormat(digits = 0)),
+                      xg1 = colDef(name = "Home xG",
+                                                align = "right",
+                                                format =  colFormat(digits = 1)),
+                      xg2 = colDef(name = "Away xG",
+                                     align = "right",
+                                   format =  colFormat(digits = 1)),
+                      prob1 = colDef(name = "Home Probs",
+                                            align = "right",
+                                            format =  colFormat(percent = TRUE)),
+                      prob2 = colDef(name = "Away Probs",
+                                                    align = "right",
+                                                    format =  colFormat(percent = TRUE)),
+                      probtie = colDef(name = "Tie Probs",
+                                     align = "right",
+                                     format =  colFormat(percent = TRUE)),
+
+                      
+                      ### add logos using embed_img()
+                      url_logo_espn.x = colDef(
+                          name = "",
+                          maxWidth = 70,
+                          align = "center",
+                          cell = embed_img(height = "25", width = "28")
+                      ),
+                      url_logo_espn.y = colDef(
+                          name = "",
+                          maxWidth = 70,
+                          align = "center",
+                          cell = embed_img(height = "25", width = "28")
+                      )),
                   pagination = TRUE,
                   compact = TRUE, 
                   borderless = FALSE, 
@@ -711,10 +965,11 @@ server <- function(input, output) {
         )
     })
     
+    
     # Current standings gt table
     output$actuals_table <-
         render_gt(
-            expr = summary_table_gt,
+            expr = summary_table_gt_538,
             height = px(900),
             width = px(900)
         )
