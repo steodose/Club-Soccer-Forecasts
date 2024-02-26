@@ -44,7 +44,7 @@ library(ggchicklet) #for stylized bar charts
 ##### Load datasets #####
 
 # Load Premier League Game Data from football-data.uk.com
-df <- read.csv("https://www.football-data.co.uk/mmz4281/2223/E0.csv", 
+df <- read.csv("https://www.football-data.co.uk/mmz4281/2324/E0.csv", 
                stringsAsFactors = FALSE)
 
 epl_matches <- read_csv("https://projects.fivethirtyeight.com/soccer-api/club/spi_matches_latest.csv") %>%
@@ -52,8 +52,12 @@ epl_matches <- read_csv("https://projects.fivethirtyeight.com/soccer-api/club/sp
            season == 2022)
 
 # Simulation results output from Sims script (update to output using GitHub actions when get it working)
-simulations <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/data/simulations.csv' %>% 
+simulations <- 'https://raw.githubusercontent.com/steodose/Club-Soccer-Forecasts/main/simulations.csv' %>%
     read_csv()
+
+# simulations <- '/Users/Stephan/Desktop/R Projects/Soccer/Premier League/simulations.csv' %>%
+#     read_csv()
+
 
 # Expected goals data from FBref (StatsBomb) via worldfootballR
 #dat_2022 <- get_match_results(country = "ENG", gender = "M", season_end_year = 2022, tier = "1st") #not working for 2022 for some reason
@@ -214,7 +218,7 @@ epl_matches2 <- epl_matches %>%
 points_forecast <- ggplot(simulations, aes(x = Pts, y = fct_reorder(Team, Pts), fill = Team)) +
     geom_density_ridges_gradient(show.legend = FALSE) +
     labs(x = "Points", y = "",
-         title = glue("2022-23 Premier League: Thru matches as of {update_date}."),
+         title = glue("2023-24 Premier League: Thru matches as of {update_date}."),
          subtitle = "Distribution of expected points after simulating the remainder of the season 10,000x",
          caption = "Data: football-data.co.uk"
     ) +
@@ -283,7 +287,7 @@ gt_sims <- league_table_gt3 %>%
                Team = "") %>% 
     tab_header(
         title = md("**Premier League Simulations**"), 
-        subtitle = paste0("2022-23 Season | Updated ", format(Sys.Date(), format="%B %d, %Y"))
+        subtitle = paste0("2023-24 Season | Updated ", format(Sys.Date(), format="%B %d, %Y"))
     )  %>% 
     text_transform(
         locations = cells_body(vars(logo)),
@@ -371,6 +375,8 @@ power_rankings_df <- power_rankings_df %>%
 
 
 ## 4a.  ----------------- Current League Table -------------------
+
+# using football-data.uk
 home <- df_results_table %>% 
     group_by(HomeTeam) %>% 
     mutate(win = if_else(FTHG > FTAG, 1, 0),
@@ -478,7 +484,7 @@ summary_table_gt <- results_summary_table3 %>%
     ) %>%
     cols_align(align = "left",
                columns = 1) %>%
-    tab_header(title = md("**2022-23 Premier League Table**"),
+    tab_header(title = md("**2023-24 Premier League Table**"),
                subtitle = glue("Thru matches played as of {update_date}.")) %>%
     tab_source_note(
         source_note = md("DATA: www.football-data.co.uk")) %>% 
@@ -607,7 +613,7 @@ summary_table_gt_538 <- results_summary_538 %>%
     cols_align(align = "left",
                columns = 1) %>%
     tab_options(column_labels.font.weight = "bold") %>%
-    tab_header(title = md("**2022-23 Premier League Table**"),
+    tab_header(title = md("**2023-24 Premier League Table**"),
                subtitle = glue("Thru matches played as of {update_date}.")) %>%
     tab_source_note(
         source_note = md("DATA: fivethirtyeight.com")) %>% 
@@ -685,7 +691,7 @@ goal_differential_plot <- epl_team_stats %>%
     labs(x = "Goals Scored",
          y = "Goals Conceded",
          caption = "Data: fivethirtyeight.com | Plot: @steodosescu",
-         title = glue("2022-23 Premier League Scoring Profiles"),
+         title = glue("2023-24 Premier League Scoring Profiles"),
          subtitle = glue("Matches thru **{update_date}**.")) +
     theme(plot.subtitle = element_markdown()) +
     scale_y_reverse()
@@ -721,7 +727,7 @@ goal_differential_barplot <- epl_team_stats %>%
     labs(x = "", 
          y = "Goal Differential", 
          caption = "Data: www.fivethirtyeight.com | Plot: @steodosescu",
-         title = glue("2022-23 Premier League Goal Differential"),
+         title = glue("2023-24 Premier League Goal Differential"),
          subtitle = glue("Matches thru **{update_date}**.")) +
     theme(plot.title = element_text(face="bold")) +
     theme(plot.subtitle = element_markdown())
@@ -738,7 +744,7 @@ ui <- tags$head(
                tags$head(tags$style(HTML('.navbar-static-top {background-color: #3d195b;}',
                                          '.navbar-default .navbar-nav>.active>a {background-color: #3d195b;}'))), #EPL purple theme for navbar
                
-               title = tags$div(img(src="epl-logo-white.png", height=28), "2022-23 EPL"),
+               title = tags$div(img(src="epl-logo-white.png", height=28), "2023-24 EPL"),
                tabPanel("Power Rankings", icon = icon("sort"), 
                         h1("English Premier League Power Rankings"),
                         glue("Welcome to my EPL projections and probabilities page where you will find each squad’s projected points total, goal differential, average finish, and its probability of Champions League qualification or relegation. These odds are based on 10,000x simulations of the remainder of the current season. The data are refreshed on Mondays and/or Thursdays after the week's matches have concluded. Last updated {update_date}."),
@@ -810,7 +816,7 @@ ui <- tags$head(
                             "Find the code on Github:", tags$a(href = "https://github.com/steodose/NHL-Odds", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
                           p("Questions? Comments? Reach out on Twitter", tags$a(href = "https://twitter.com/steodosescu", tags$i(class = 'fa fa-twitter', style = 'color:#1DA1F2'), target = '_blank'), style = "font-size: 100%"),
                           p(tags$em("Last updated: September 2021"), style = 'font-size:85%'))),
-               windowTitle = "2022-23 Premier League"
+               windowTitle = "2023-24 Premier League"
     ) #navbarPage bracket
 ) #END UI function
 
@@ -1013,7 +1019,7 @@ server <- function(input, output) {
             scale_fill_manual(values = '#ff0078') +
             labs(
                 x = "Predicted League Finish", y = "Chance (%)",
-                title = "2022-23 Premier League",
+                title = "2023-24 Premier League",
                 subtitle = glue("Probabilities of particular placements in the league table. Data as of {update_date}."),
                 caption = "Data: www.football-data.co.uk\nGraphic: @steodosescu"
             ) +
