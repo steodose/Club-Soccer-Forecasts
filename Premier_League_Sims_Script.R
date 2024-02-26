@@ -9,7 +9,7 @@ library(tidyverse)
 
 
 # Load Premier League Game Data from football-data.com
-df <- read.csv("https://www.football-data.co.uk/mmz4281/2223/E0.csv", 
+df <- read.csv("https://www.football-data.co.uk/mmz4281/2324/E0.csv", 
                stringsAsFactors = FALSE)
 
 sMatch <- paste(df$HomeTeam, df$AwayTeam, sep = " - ")
