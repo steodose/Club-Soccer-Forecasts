@@ -97,4 +97,4 @@ for (i in 1:iSim){
 
 
 ##### Write to csv file in the working directory to be used in the app script #####
-write_csv(df.all, "data/simulations.csv")
+write_csv(df.all, "simulations.csv")
