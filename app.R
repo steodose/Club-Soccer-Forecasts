@@ -76,12 +76,10 @@ team_mapping2 <- team_mapping %>%
 ##### Data Pre-processing #####
 
 # Fetch current date for updating visualizations
-#update_date <- max(df$Date)
+ df_date <- df %>%
+     mutate(Date = lubridate::dmy(Date))  # convert to month/day/year format
+ update_date <- max(df_date$Date)
 
-update_date <- epl_matches %>%
-    drop_na()
-
-update_date <- max(update_date$date)
 update_date <- format(update_date, format ="%b %d, %Y")
 
 
